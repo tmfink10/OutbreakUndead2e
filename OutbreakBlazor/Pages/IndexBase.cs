@@ -1253,7 +1253,7 @@ namespace OutbreakBlazor.Pages
             var appRoot = appPathMatcher.Match(exePath).Value;
             return System.IO.Path.Combine(appRoot, filePath);
         }
-
+         
     }
 
 }
