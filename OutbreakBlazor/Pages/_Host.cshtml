@@ -10,11 +10,11 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OU2eHelper</title>
+    <title>Outbreak Undead</title>
     <base href="~/" />
     <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
     <link href="css/site.css" rel="stylesheet" />
-    <link href="OU2eHelper.styles.css" rel="stylesheet" />
+    <link href="OutbreakBlazor.styles.css" rel="stylesheet" />
     <link rel="apple-touch-icon" sizes="180x180" href="_content/SampleCore/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="_content/SampleCore/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="_content/SampleCore/favicon-16x16.png">
@@ -25,22 +25,23 @@
     <link href="_content/Blazored.Modal/blazored-modal.css" rel="stylesheet" />
 </head>
 <body>
-<component type="typeof(App)" render-mode="ServerPrerendered" />
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
 
-<div id="blazor-error-ui">
-    <environment include="Staging,Production">
-        An error has occurred. This application may no longer respond until reloaded.
-    </environment>
-    <environment include="Development">
-        An unhandled exception has occurred. See browser dev tools for details.
-    </environment>
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
 
-<script src="_framework/blazor.server.js"></script>
-<script src="_content/BlazorStrap/blazorStrap.js"></script>
-<script src="_content/Blazored.Modal/blazored.modal.js"></script>
+    <script src="_framework/blazor.server.js"></script>
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <script src="_content/BlazorStrap/blazorStrap.js"></script>
+    <script src="_content/Blazored.Modal/blazored.modal.js"></script>
 
 </body>
 </html>
