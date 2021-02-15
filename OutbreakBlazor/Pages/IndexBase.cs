@@ -513,8 +513,11 @@ namespace OutbreakBlazor.Pages
         {
             ThisCharacter.PlayerAbilities.Remove(ability);
             ThisCharacter.GestaltLevel = ThisCharacter.GestaltLevel + (((ability.Tier - 1) * ability.Tier) / 2) + ability.Tier;
-            ThisCharacter.PlayerAttributes
-                .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode).Points += 1;
+            if (ability.AddedUsingBaseAttributeCode != null)
+            {
+                ThisCharacter.PlayerAttributes
+                    .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode).Points += 1;
+            }
         }
 
         protected void InitializePlayerSkills(BaseSkill skill)
@@ -671,7 +674,7 @@ namespace OutbreakBlazor.Pages
                                 }
                             }
                         }
-                        skill.Value += totalAdvancement;
+                        skill.Value = InitialValue + totalAdvancement;
                         skill.AdvancementsList.Add(totalAdvancement);
                     }
                     else if (skill.IsSupported)
@@ -693,7 +696,7 @@ namespace OutbreakBlazor.Pages
                                 }
                             }
                         }
-                        skill.Value += totalAdvancement;
+                        skill.Value = InitialValue + totalAdvancement;
                         skill.AdvancementsList.Add(totalAdvancement);
                     }
                     else
@@ -701,7 +704,7 @@ namespace OutbreakBlazor.Pages
                         var roll = RollD5("Lowest");
                         ThisCharacter.GestaltLevel -= 1;
                         skill.Advancements += 1;
-                        skill.Value += roll;
+                        skill.Value = InitialValue + roll;
                         skill.AdvancementsList.Add(roll);
                     }
                 }
@@ -731,7 +734,7 @@ namespace OutbreakBlazor.Pages
                             }
                         }
 
-                        skill.Value += totalAdvancement;
+                        skill.Value = InitialValue + totalAdvancement;
                         skill.AdvancementsList.Add(totalAdvancement);
                     }
                     if (skill.IsSupported)
@@ -753,7 +756,7 @@ namespace OutbreakBlazor.Pages
                                 }
                             }
                         }
-                        skill.Value += totalAdvancement;
+                        skill.Value = InitialValue + totalAdvancement;
                         skill.AdvancementsList.Add(totalAdvancement);
                     }
                     else

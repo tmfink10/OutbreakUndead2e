@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <UserSecretsId>cbd5c285-44f0-4512-9efd-a56fe258b16d</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,6 +10,7 @@
     <PackageReference Include="BlazorStrap" Version="1.5.0" />
     <PackageReference Include="ceTe.DynamicPDF.CoreSuite.NET" Version="11.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.HttpClient" Version="3.2.0-preview3.20168.3" />
+    <PackageReference Include="Microsoft.Azure.SignalR" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup>
