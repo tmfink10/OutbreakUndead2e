@@ -350,7 +350,7 @@ else
         </BSModalFooter>
     </BSModal>
 
-    <BSModal @ref="PlayerAbilityAttributeSelection" IsCentered="true">
+    <BSModal @ref="PlayerAbilityAttributeSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
         <BSModalHeader>Select Attribute with which to add @ThisBaseAbility.Name</BSModalHeader>
         <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
             <BSModalBody>

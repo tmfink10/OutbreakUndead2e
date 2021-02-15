@@ -942,6 +942,7 @@ namespace OutbreakBlazor.Pages
         protected void onPlayerAbilityToggleOn(PlayerAbility ability)
         {
             ThisPlayerAbility = ability;
+            ThisBaseAbility = ThisPlayerAbility.BaseAbility;
             PlayerAbilityAttributeSelection.Toggle();
         }
         protected void onPlayerAbilityToggleOff(PlayerAbility ability)
