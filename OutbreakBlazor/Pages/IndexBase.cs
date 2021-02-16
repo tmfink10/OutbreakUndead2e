@@ -53,10 +53,10 @@ namespace OutbreakBlazor.Pages
         protected bool _createNew;
         protected bool _addAbilities;
         protected bool _addSkills;
+        protected bool HasInstruction;
         protected int InitialValue;
         protected int FinalValue;
         protected int Delta;
-        protected string AbilityAttributeSelectionValue;
 
         protected override async Task OnInitializedAsync()
         {
@@ -338,73 +338,74 @@ namespace OutbreakBlazor.Pages
 
         protected async Task HandleOnValidBaseAbilitySubmit()
         {
-            var tempAbility = new PlayerAbility
+            if (!string.IsNullOrEmpty(Helper.FormString))
             {
-                BaseAbility = BaseAbilities.FirstOrDefault(a => a.Id == Int32.Parse(Helper.FormString))
-            };
-
-            if (tempAbility.BaseAbility.Description.Contains("Skill Support: {"))
-            {
-                var end = tempAbility.BaseAbility.Description.IndexOf("}");
-
-                var rawSkillNames = tempAbility.BaseAbility.Description.Remove(end);
-                rawSkillNames = rawSkillNames.Remove(0, rawSkillNames.IndexOf("{") + 1);
-
-                var SkillNames = new List<string>();
-                var FinalList = new List<string>();
-
-                while (rawSkillNames.Length > 0)
+                var tempAbility = new PlayerAbility
                 {
-                    Console.WriteLine($"RawSkillNames:{rawSkillNames}");
-                    var tempString = rawSkillNames.Remove(rawSkillNames.IndexOf('%'));
-                    SkillNames.Add(tempString);
-                    tempString = "";
-                    rawSkillNames = rawSkillNames.Remove(0, rawSkillNames.IndexOf('%') + 1);
-                }
+                    BaseAbility = BaseAbilities.FirstOrDefault(a => a.Id == Int32.Parse(Helper.FormString)), Tier = 1
+                };
 
-                foreach (var name in SkillNames)
+                if (tempAbility.BaseAbility.Description.Contains("Skill Support: {"))
                 {
-                    if (name.Contains(','))
+                    var end = tempAbility.BaseAbility.Description.IndexOf("}");
+
+                    var rawSkillNames = tempAbility.BaseAbility.Description.Remove(end);
+                    rawSkillNames = rawSkillNames.Remove(0, rawSkillNames.IndexOf("{") + 1);
+
+                    var SkillNames = new List<string>();
+                    var FinalList = new List<string>();
+
+                    while (rawSkillNames.Length > 0)
                     {
-                        FinalList.Add(name.Remove(0, 2));
+                        Console.WriteLine($"RawSkillNames:{rawSkillNames}");
+                        var tempString = rawSkillNames.Remove(rawSkillNames.IndexOf('%'));
+                        SkillNames.Add(tempString);
+                        tempString = "";
+                        rawSkillNames = rawSkillNames.Remove(0, rawSkillNames.IndexOf('%') + 1);
                     }
-                    else
-                    {
-                        FinalList.Add(name);
-                    }
-                }
 
-                foreach (var name in FinalList)
-                {
-                    foreach (var skill in ThisCharacter.PlayerSkills)
+                    foreach (var name in SkillNames)
                     {
-                        if (skill.BaseSkill.Name == name)
+                        if (name.Contains(','))
                         {
-                            skill.IsSupported = true;
-                            tempAbility.SupportsPlayerSkills.Add(skill);
+                            FinalList.Add(name.Remove(0, 2));
+                        }
+                        else
+                        {
+                            FinalList.Add(name);
+                        }
+                    }
+
+                    foreach (var name in FinalList)
+                    {
+                        foreach (var skill in ThisCharacter.PlayerSkills)
+                        {
+                            if (skill.BaseSkill.Name == name)
+                            {
+                                skill.IsSupported = true;
+                                tempAbility.SupportsPlayerSkills.Add(skill);
+                            }
                         }
                     }
                 }
-            }
 
-            tempAbility = await PlayerAbilityService.CreatePlayerAbility(tempAbility);
+                tempAbility = await PlayerAbilityService.CreatePlayerAbility(tempAbility);
 
-            if (tempAbility.AddedUsingBaseAttributeCode == null)
-            {
-                if (tempAbility.BaseAbility.UsesBaseAttributes.Count == 1)
+                if (tempAbility.AddedUsingBaseAttributeCode == null)
                 {
-                    tempAbility.AddedUsingBaseAttributeCode = tempAbility.BaseAbility.UsesBaseAttributes[0].Name;
-                    ThisCharacter.PlayerAttributes
-                        .FirstOrDefault(a => a.BaseAttribute.Name == tempAbility.AddedUsingBaseAttributeCode).Points -= 1;
+                    if (tempAbility.BaseAbility.UsesBaseAttributes.Count == 1)
+                    {
+                        tempAbility.AddedUsingBaseAttributeCode = tempAbility.BaseAbility.UsesBaseAttributes[0].Name;
+                        onPlayerAbilitySingleAttributeAddSpendSelectionToggleOn(tempAbility);
+                    }
+                    else
+                    {
+                        onPlayerAbilityToggleOn(tempAbility);
+                    }
                 }
-                else
-                {
-                    onPlayerAbilityToggleOn(tempAbility);
-                }
+
+                ThisCharacter.PlayerAbilities.Add(tempAbility);
             }
-
-            ThisCharacter.PlayerAbilities.Add(tempAbility);
-
         }
 
         protected async Task<PlayerAbility> HandleOnValidPlayerAbilitySubmit()
@@ -416,62 +417,16 @@ namespace OutbreakBlazor.Pages
 
         protected async Task<PlayerAbility> HandleIncrementPlayerAbility(PlayerAbility ability)
         {
-
-            if (ability.Tier < 0)
-            {
-                if (InitialValue == 0)
-                {
-                    ability.Tier = 0;
-                }
-                if (InitialValue == 1)
-                {
-                    ThisCharacter.GestaltLevel += 1;
-                    ability.Tier = 0;
-                }
-                if (InitialValue == 2)
-                {
-                    ThisCharacter.GestaltLevel += 3;
-                    ability.Tier = 0;
-                }
-                if (InitialValue == 3)
-                {
-                    ThisCharacter.GestaltLevel += 6;
-                    ability.Tier = 0;
-                }
-                if (InitialValue == 4)
-                {
-                    ThisCharacter.GestaltLevel += 10;
-                    ability.Tier = 0;
-                }
-                if (InitialValue == 5)
-                {
-                    ThisCharacter.GestaltLevel += 15;
-                    ability.Tier = 0;
-                }
-                return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
-            }
-
             if (ability.Tier == 6)
             {
                 ability.Tier = 5;
                 return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
             }
 
-            if (ability.Tier > 6)
-            {
-                if (InitialValue == 0)
-                {
-                    ability.Tier = 0;
-                }
-                else
-                {
-                    ThisCharacter.GestaltLevel += (((InitialValue - 1) * InitialValue) / 2) + InitialValue - 1;
-                    ability.Tier = 0;
-                }
-            }
             if (ability.Tier > InitialValue)
             {
-                ThisCharacter.GestaltLevel -= ability.Tier;
+                onPlayerAbilitySpendSelectionToggleOn(ability);
+
                 if (ThisCharacter.TrainingValues != null)
                 {
                     foreach (var trainingValue in ThisCharacter.TrainingValues)
@@ -488,7 +443,35 @@ namespace OutbreakBlazor.Pages
             }
             else if (ability.Tier < InitialValue)
             {
-                ThisCharacter.GestaltLevel += (ability.Tier + 1);
+                if (ability.Tier == 0)
+                {
+                    ability.Tier = 1;
+                    return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
+                }
+
+                if (ability.AdvancedUsing.Count > 0)
+                {
+                    if (ability.AdvancedUsing[^1] == "gestalt")
+                    {
+                        ThisCharacter.GestaltLevel += (ability.Tier + 1);
+                        ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
+                    }
+
+                    else if (ability.AdvancedUsing[^1] == "gestaltDouble")
+                    {
+                        ThisCharacter.GestaltLevel += (ability.Tier + 1)*2;
+                        ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
+                    }
+
+                    else if (ability.AdvancedUsing[^1] == "points" || ability.AdvancedUsing[^1] == "pointsDouble")
+                    {
+                        ThisCharacter.PlayerAttributes.FirstOrDefault(a =>
+                            a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode).Points += 1;
+                        ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
+                    }
+                }
+                
+                
                 if (ThisCharacter.TrainingValues != null)
                 {
                     foreach (var trainingValue in ThisCharacter.TrainingValues)
@@ -512,12 +495,41 @@ namespace OutbreakBlazor.Pages
         protected void DeletePlayerAbility(PlayerAbility ability)
         {
             ThisCharacter.PlayerAbilities.Remove(ability);
-            ThisCharacter.GestaltLevel = ThisCharacter.GestaltLevel + (((ability.Tier - 1) * ability.Tier) / 2) + ability.Tier;
-            if (ability.AddedUsingBaseAttributeCode != null)
+            var attribute = ThisCharacter.PlayerAttributes
+                .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+            for (int i = ability.AdvancedUsing.Count-1; i > -1; i--)
             {
-                ThisCharacter.PlayerAttributes
-                    .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode).Points += 1;
+                if (ability.AdvancedUsing[i] == "gestalt")
+                {
+                    if (i == 0)
+                    {
+                        ThisCharacter.GestaltLevel += (5 - attribute.Bonus);
+                    }
+                    else
+                    {
+                        ThisCharacter.GestaltLevel += ability.Tier;
+                    }
+                }
+                else if (ability.AdvancedUsing[i] == "gestaltDouble")
+                {
+                    if (i == 0)
+                    {
+                        ThisCharacter.GestaltLevel += (5 - attribute.Bonus)*2;
+                    }
+                    else
+                    {
+                        ThisCharacter.GestaltLevel += ability.Tier*2;
+                    }
+                }
+                else if (ability.AdvancedUsing[i] == "points" || ability.AdvancedUsing[i] == "pointsDouble")
+                {
+                    attribute.Points += 1;
+                }
+
+                ability.Tier -= 1;
             }
+
+            ability.AdvancedUsing = new List<string>();
         }
 
         protected void InitializePlayerSkills(BaseSkill skill)
@@ -947,9 +959,102 @@ namespace OutbreakBlazor.Pages
         }
         protected void onPlayerAbilityToggleOff(PlayerAbility ability)
         {
-            ThisCharacter.PlayerAttributes
-                .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode).Points -= 1;
+            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
+            if (Helper.FormString2 == "points")
+            {
+                attribute.Points -= 1;
+                ability.AdvancedUsing.Add(Helper.FormString2);
+            }
+            else if (Helper.FormString2 == "gestalt")
+            {
+                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+                ability.AdvancedUsing.Add(Helper.FormString2);
+
+                if (ability.BaseAbility.IsProfessional && HasInstruction == false)
+                {
+                    ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+                    ability.AdvancedUsing[^1] += "Double";
+                }
+
+                HasInstruction = false;
+            }
+            
+            Helper.FormString2 = "";
+
             PlayerAbilityAttributeSelection.Toggle();
+        }
+
+        protected BSModal PlayerAbilitySpendSelection { get; set; }
+        protected void onPlayerAbilitySpendSelectionToggleOn(PlayerAbility ability)
+        {
+            ThisPlayerAbility = ability;
+            ThisBaseAbility = ThisPlayerAbility.BaseAbility;
+            PlayerAbilitySpendSelection.Toggle();
+        }
+        protected void onPlayerAbilitySpendSelectionToggleOff(PlayerAbility ability)
+        {
+            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
+            if (Helper.FormString2 == "points")
+            {
+                attribute.Points -= 1;
+                ability.AdvancedUsing.Add(Helper.FormString2);
+
+            }
+            else if (Helper.FormString2 == "gestalt")
+            {
+                ThisCharacter.GestaltLevel -= ability.Tier;
+                ability.AdvancedUsing.Add(Helper.FormString2);
+
+                if (ability.BaseAbility.IsProfessional && HasInstruction == false)
+                {
+                    ThisCharacter.GestaltLevel -= (ability.Tier);
+                    ability.AdvancedUsing[^1] += "Double";
+                }
+
+                HasInstruction = false;
+            }
+
+            Helper.FormString2 = "";
+
+            PlayerAbilitySpendSelection.Toggle();
+        }
+
+        protected BSModal PlayerAbilitySingleAttributeAddSpendSelection { get; set; }
+        protected void onPlayerAbilitySingleAttributeAddSpendSelectionToggleOn(PlayerAbility ability)
+        {
+            ThisPlayerAbility = ability;
+            ThisBaseAbility = ThisPlayerAbility.BaseAbility;
+            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
+        }
+        protected void onPlayerAbilitySingleAttributeAddSpendSelectionToggleOff(PlayerAbility ability)
+        {
+            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
+            if (Helper.FormString2 == "points")
+            {
+                attribute.Points -= 1;
+                ability.AdvancedUsing.Add(Helper.FormString2);
+
+            }
+            else if (Helper.FormString2 == "gestalt")
+            {
+                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+                ability.AdvancedUsing.Add(Helper.FormString2);
+
+                if (ability.BaseAbility.IsProfessional && HasInstruction == false)
+                {
+                    ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+                    ability.AdvancedUsing[^1] += "Double";
+                }
+
+                HasInstruction = false;
+            }
+
+            Helper.FormString2 = "";
+
+            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
         }
 
         protected async Task<PlayerAbility> UpdateThisPlayerAttribute()
@@ -1224,8 +1329,8 @@ namespace OutbreakBlazor.Pages
                     Y += 16;
                 }
             }
-
             MergeDocument mergeDoc = new MergeDocument(GetPath(@".\wwwroot\CharacterSheets\OutbreakTemplate.pdf"));
+            System.Threading.Thread.Sleep(3000);
 
             Page page0 = mergeDoc.Pages[0];
             Page page1 = mergeDoc.Pages[1];
@@ -1245,6 +1350,7 @@ namespace OutbreakBlazor.Pages
 
             var rand = new Random().Next(1, 1000000000);
             var path = $@".\wwwroot\CharacterSheets\Outbreak_Undead_Character_{rand}.pdf";
+            
             mergeDoc.Draw(path);
 
             CharacterSheetLocation = $"/CharacterSheets/Outbreak_Undead_Character_{rand}.pdf";
@@ -1257,7 +1363,5 @@ namespace OutbreakBlazor.Pages
             var appRoot = appPathMatcher.Match(exePath).Value;
             return System.IO.Path.Combine(appRoot, filePath);
         }
-         
     }
-
 }

@@ -15,5 +15,6 @@ namespace OutbreakModels.Models
         public int Tier { get; set; }
         public List<PlayerSkill> SupportsPlayerSkills { get; set; } = new List<PlayerSkill>();
         public string AddedUsingBaseAttributeCode { get; set; }
+        public List<string> AdvancedUsing { get; set; } = new List<string>();
     }
 }
