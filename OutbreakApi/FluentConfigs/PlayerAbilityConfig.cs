@@ -18,6 +18,7 @@ namespace OutbreakApi.FluentConfigs
                 .HasMaxLength(50);
             builder.Property(a => a.Notes)
                 .HasMaxLength(500);
+            builder.Ignore(a => a.AdvancedUsing);
 
             builder.HasOne<BaseAbility>(a => a.BaseAbility);
         }

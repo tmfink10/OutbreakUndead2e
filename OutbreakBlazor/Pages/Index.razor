@@ -266,7 +266,7 @@ else
                                 <BSCard Alignment="Alignment.Center">
                                     <BSCard CardType="CardType.Header">
                                         <BSCard CardType="CardType.Title" @onclick="(() => onBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</BSCard>
-                                        <BSCard CardType="CardType.Title">@skill.Notes</BSCard>
+                                        <BSCard CardType="CardType.Title">@skill.Specialty</BSCard>
                                     </BSCard>
                                     <BSCard CardType="CardType.Body">
                                         <BSButton Color="Color.Danger" @onclick="(()=>HandleDecreasePlayerSkill(skill))">-</BSButton>
@@ -278,16 +278,9 @@ else
                                                  style="width: 75px;" />
                                         <BSButton Color="Color.Success" @onclick="(()=> HandleIncreasePlayerSkill(skill))">+</BSButton>
                                     </BSCard>
-                                    @if (string.IsNullOrWhiteSpace(skill.Notes))
-                                    {
-                                        <BSCard CardType="CardType.Footer">
-                                            <BSButton Color="Color.Light" Size="Size.Large" @onclick="(()=>HandleSpecializeSkill(skill))">Specialize</BSButton>
-                                        </BSCard>
-                                    }
-                                    else
-                                    {
-                                        <BSCard CardType="CardType.Footer"></BSCard>
-                                    }
+                                    <BSCard CardType="CardType.Footer">
+                                        <BSButton Color="Color.Danger" Size="Size.Large" @onclick="(()=>HandleRemovePlayerSkill(skill))">Remove</BSButton>
+                                    </BSCard>
                                 </BSCard>
                             </BSForm>
                         </div>
@@ -529,11 +522,11 @@ else
         </BSModalFooter>
     </BSModal>
 
-    <BSModal @ref="SpecializePlayerSkill" IsCentered="true">
+    <BSModal @ref="SpecializePlayerSkill" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
         <BSModalHeader>Specialize @ThisPlayerSkill.BaseSkill.Name</BSModalHeader>
         <BSModalBody>
             <BSForm Model="ThisPlayerSkill" OnValidSubmit="(onSpecializePlayerSkillToggleOff)">
-                <BSInput InputType="InputType.Text" @bind-Value="ThisPlayerSkill.Notes">Specialty:</BSInput>
+                <BSInput InputType="InputType.Text" @bind-Value="ThisPlayerSkill.Specialty">Specialty:</BSInput>
             </BSForm>
         </BSModalBody>
         <BSModalFooter>

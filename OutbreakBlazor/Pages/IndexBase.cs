@@ -701,6 +701,18 @@ namespace OutbreakBlazor.Pages
 
             playerSkill.BaseSkill = skill;
 
+            if (skill.Name == "Diplomacy <Barter/Bribe>" || 
+                skill.Name == "Diplomacy <Command>" || 
+                skill.Name == "Diplomacy <Determine Motives>" || 
+                skill.Name == "Diplomacy <Intimidate>" || 
+                skill.Name == "Diplomacy <Persuade>")
+            {
+                var specialty = skill.Name.Remove(0, 11);
+                specialty = specialty.Remove(specialty.Length - 1);
+                playerSkill.Specialty = specialty;
+                playerSkill.IsSpecialized = true;
+            }
+
             ThisCharacter.PlayerSkills.Add(playerSkill);
         }
 
@@ -1078,9 +1090,17 @@ namespace OutbreakBlazor.Pages
                 IsSpecialized = true
             };
 
+            ThisCharacter.GestaltLevel -= skill.AdvancementsList.Count;
+
             ThisPlayerSkill = newPlayerSkill;
 
             onSpecializePlayerSkillToggleOn(ThisPlayerSkill);
+        }
+
+        protected void HandleRemovePlayerSkill(PlayerSkill skill)
+        {
+            ThisCharacter.SpecializedPlayerSkills.Remove(skill);
+            ThisCharacter.GestaltLevel += skill.AdvancementsList.Count;
         }
 
         protected void InitializePlayerTrainingValues(BaseTrainingValue value)
@@ -1359,16 +1379,19 @@ namespace OutbreakBlazor.Pages
         }
         protected async Task onSpecializePlayerSkillToggleOff()
         {
-            if (!string.IsNullOrWhiteSpace(ThisPlayerSkill.Notes))
+            if (!string.IsNullOrWhiteSpace(ThisPlayerSkill.Specialty))
             {
                 var newPlayerSkill = await PlayerSkillService.CreatePlayerSkill(ThisPlayerSkill);
 
                 ThisCharacter.SpecializedPlayerSkills.Add(newPlayerSkill);
 
-                ThisPlayerSkill.Notes = "";
-                ThisPlayerSkill.IsSpecialized = false;
+                ThisPlayerSkill = new PlayerSkill(){BaseSkill = new BaseSkill()};
             }
-            
+            else
+            {
+                ThisCharacter.GestaltLevel += ThisPlayerSkill.AdvancementsList.Count;
+            }
+
             SpecializePlayerSkill.Toggle();
         }
 
@@ -1465,7 +1488,7 @@ namespace OutbreakBlazor.Pages
 
         public void GeneratePdf()
         {
-            var TempSpecializedSkills = ThisCharacter.SpecializedPlayerSkills;
+            var TempSpecializedSkills = ThisCharacter.SpecializedPlayerSkills.ToList();
 
             var spewFontSize = 20;
             var headerFontSize = 13;
@@ -1531,11 +1554,14 @@ namespace OutbreakBlazor.Pages
             {
                 for (int i = 635; i < 684; i += 16)
                 {
-                    page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Craft/Construct/Engineer", true), skillAdvancementsIndentLeft, i, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-                    page0Labels.Add(new Label(getPlayerSkillSpecialtyByBaseSkillName("Craft/Construct/Engineer", true), skillAdvancementsIndentLeft +22, i-3, 504, 100, Font.Helvetica, skillsFontSize -1, TextAlign.Left));
-                    page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Craft/Construct/Engineer", true), skillIndentLeft, i-2, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-                    TempSpecializedSkills.Remove(
-                        TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Craft/Construct/Engineer"));
+                    var skillToRemove = TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Craft/Construct/Engineer");
+                    if (skillToRemove != null)
+                    {
+                        page0Labels.Add(new Label(skillToRemove.Advancements.ToString(), skillAdvancementsIndentLeft, i, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+                        page0Labels.Add(new Label(skillToRemove.Specialty, skillAdvancementsIndentLeft + 22, i - 3, 504, 100, Font.Helvetica, skillsFontSize - 1, TextAlign.Left));
+                        page0TransparencyGroup.Add(new Label(skillToRemove.Value.ToString(), skillIndentLeft, i - 2, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+                        TempSpecializedSkills.Remove(skillToRemove);
+                    }
                 }
             }
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Martial Arts"), skillAdvancementsIndentLeft, 699, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
@@ -1544,11 +1570,14 @@ namespace OutbreakBlazor.Pages
             {
                 for (int i = 731; i < 748; i += 16)
                 {
-                    page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Pilot", true), skillAdvancementsIndentLeft, i, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-                    page0Labels.Add(new Label(getPlayerSkillSpecialtyByBaseSkillName("Pilot", true), skillAdvancementsIndentLeft + 22, i - 3, 504, 100, Font.Helvetica, skillsFontSize - 1, TextAlign.Left));
-                    page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Pilot", true), skillIndentLeft, i - 2, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-                    TempSpecializedSkills.Remove(
-                        TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot"));
+                    var skillToRemove = TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot");
+                    if (skillToRemove != null)
+                    {
+                        page0Labels.Add(new Label(skillToRemove.Advancements.ToString(), skillAdvancementsIndentLeft, i, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+                        page0Labels.Add(new Label(skillToRemove.Specialty, skillAdvancementsIndentLeft + 22, i - 3, 504, 100, Font.Helvetica, skillsFontSize - 1, TextAlign.Left));
+                        page0TransparencyGroup.Add(new Label(skillToRemove.Value.ToString(), skillIndentLeft, i - 2, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+                        TempSpecializedSkills.Remove(skillToRemove);
+                    }
                 }
             }
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Balance"), skillIndentLeft, 291, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
@@ -1572,8 +1601,6 @@ namespace OutbreakBlazor.Pages
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Craft/Construct/Engineer"), skillIndentLeft, 617, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Martial Arts"), skillIndentLeft, 697, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Pilot"), skillIndentLeft, 713, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label("", skillIndentLeft, 729, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label("", skillIndentLeft, 745, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
 
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Hold"), skillAdvancementsIndentRight, 293, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Jump/Leap"), skillAdvancementsIndentRight, 309, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
@@ -1593,6 +1620,17 @@ namespace OutbreakBlazor.Pages
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Swim"), skillAdvancementsIndentRight, 553, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Throw"), skillAdvancementsIndentRight, 569, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Ride"), skillAdvancementsIndentRight, 603, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Ride") != null)
+            {
+                var skillToRemove = TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Ride");
+                if (skillToRemove != null)
+                {
+                    page0Labels.Add(new Label(skillToRemove.Advancements.ToString(), skillAdvancementsIndentRight, 619, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+                    page0Labels.Add(new Label(skillToRemove.Specialty, skillAdvancementsIndentRight + 22, 616, 504, 100, Font.Helvetica, skillsFontSize - 1, TextAlign.Left));
+                    page0TransparencyGroup.Add(new Label(skillToRemove.Value.ToString(), skillIndentRight, 617, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+                    TempSpecializedSkills.Remove(skillToRemove);
+                }
+            }
             page0Labels.Add(new Label("", skillAdvancementsIndentRight, 619, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Science"), skillAdvancementsIndentRight, 635, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label("", skillAdvancementsIndentRight, 651, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));

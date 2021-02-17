@@ -17,6 +17,7 @@ namespace OutbreakModels.Models
         public List<int> AdvancementsList { get; set; } = new List<int>();
         public bool IsSupported { get; set; }
         public bool IsSpecialized { get; set; }
+        public string Specialty { get; set; }
 
     }
 }
