@@ -97,7 +97,12 @@ namespace OutbreakBlazor.Pages
         protected BaseSkill ThisBaseSkill = new BaseSkill();
         protected PlayerAbility ThisPlayerAbility = new PlayerAbility();
         protected PlayerAttribute ThisPlayerAttribute = new PlayerAttribute();
-        protected PlayerSkill ThisPlayerSkill = new PlayerSkill();
+
+        protected PlayerSkill ThisPlayerSkill = new PlayerSkill()
+        {
+            BaseSkill = new BaseSkill()
+        };
+
         protected HelperClass Helper = new HelperClass();
         public string CharacterSheetLocation;
 
@@ -370,6 +375,12 @@ namespace OutbreakBlazor.Pages
                         {
                             FinalList.Add(name.Remove(0, 2));
                         }
+
+                        if (name.Contains('('))
+                        {
+                            var position = name.IndexOf("(");
+                            FinalList.Add(name.Remove(position-1));
+                        }
                         else
                         {
                             FinalList.Add(name);
@@ -492,6 +503,82 @@ namespace OutbreakBlazor.Pages
             return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
         }
 
+        protected async Task<PlayerAbility> HandleIncreasePlayerAbility(PlayerAbility ability)
+        {
+            if (ability.Tier == 5)
+            {
+                return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
+            }
+
+            onPlayerAbilitySpendSelectionToggleOn(ability);
+
+            ability.Tier += 1;
+
+            if (ThisCharacter.TrainingValues == null)
+                return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
+
+            foreach (var trainingValue in ThisCharacter.TrainingValues)
+            {
+                foreach (var baseTrainingValue in ability.BaseAbility.ModifiesBaseTrainingValues)
+                {
+                    if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
+                    {
+                        trainingValue.Value += 1;
+                    }
+                }
+            }
+
+            return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
+        }
+
+        protected async Task<PlayerAbility> HandleDecreasePlayerAbility(PlayerAbility ability)
+        {
+            if (ability.Tier == 1)
+            {
+                return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
+            }
+
+            if (ability.AdvancedUsing.Count > 0)
+            {
+                if (ability.AdvancedUsing[^1] == "gestalt")
+                {
+                    ThisCharacter.GestaltLevel += (ability.Tier);
+                    ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
+                }
+
+                else if (ability.AdvancedUsing[^1] == "gestaltDouble")
+                {
+                    ThisCharacter.GestaltLevel += (ability.Tier) * 2;
+                    ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
+                }
+
+                else if (ability.AdvancedUsing[^1] == "points" || ability.AdvancedUsing[^1] == "pointsDouble")
+                {
+                    ThisCharacter.PlayerAttributes.FirstOrDefault(a =>
+                        a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode).Points += 1;
+                    ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
+                }
+
+                ability.Tier -= 1;
+            }
+
+            if (ThisCharacter.TrainingValues != null)
+            {
+                foreach (var trainingValue in ThisCharacter.TrainingValues)
+                {
+                    foreach (var baseTrainingValue in ability.BaseAbility.ModifiesBaseTrainingValues)
+                    {
+                        if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
+                        {
+                            trainingValue.Value -= 1;
+                        }
+                    }
+                }
+            }
+
+            return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
+        }
+
         protected void DeletePlayerAbility(PlayerAbility ability)
         {
             ThisCharacter.PlayerAbilities.Remove(ability);
@@ -534,7 +621,7 @@ namespace OutbreakBlazor.Pages
 
         protected void InitializePlayerSkills(BaseSkill skill)
         {
-            var playerSkill = new PlayerSkill { Value = 0, AdvancementsList = new List<int>() };
+            var playerSkill = new PlayerSkill();
             if (skill.Type == "Expert")
             {
                 if (skill.PrimaryAttributeBaseAttributeId == 1 || skill.SecondaryAttributeBaseAttributeId == 1)
@@ -806,6 +893,196 @@ namespace OutbreakBlazor.Pages
             return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
         }
 
+        protected async Task<PlayerSkill> HandleIncreasePlayerSkill(PlayerSkill skill)
+        {
+            InitialValue = skill.Value;
+
+            var totalAdvancement = 0;
+
+            if (skill.AdvancementsList.Count==5)
+            {
+                return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+            }
+
+            if (skill.BaseSkill.Type == "Basic")
+            {
+                if (skill.IsSupported)
+                {
+                    var roll = RollD5("Highest");
+                    ThisCharacter.GestaltLevel -= 1;
+                    skill.Advancements += 1;
+                    totalAdvancement += roll;
+                    foreach (var ability in ThisCharacter.PlayerAbilities)
+                    {
+                        foreach (var playerSkill in ability.SupportsPlayerSkills)
+                        {
+                            if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
+                            {
+                                if (ability.BaseAbility.AdvancesSkills)
+                                {
+                                    totalAdvancement += ability.Tier;
+                                }
+                            }
+                        }
+                    }
+                    skill.Value = InitialValue + totalAdvancement;
+                    skill.AdvancementsList.Add(totalAdvancement);
+                }
+                else
+                {
+                    var roll = RollD5();
+                    ThisCharacter.GestaltLevel -= 1;
+                    skill.Advancements += 1;
+                    skill.Value = InitialValue + roll;
+                    skill.AdvancementsList.Add(roll);
+                }
+            }
+
+            else if (skill.BaseSkill.Type == "Trained")
+            {
+                if (skill.IsSpecialized)
+                {
+                    var roll = RollD5("Highest");
+                    ThisCharacter.GestaltLevel -= 1;
+                    skill.Advancements += 1;
+                    totalAdvancement += roll;
+                    if (skill.IsSupported)
+                    {
+                        foreach (var ability in ThisCharacter.PlayerAbilities)
+                        {
+                            foreach (var playerSkill in ability.SupportsPlayerSkills)
+                            {
+                                if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
+                                {
+                                    if (ability.BaseAbility.AdvancesSkills)
+                                    {
+                                        totalAdvancement += ability.Tier;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    skill.Value = InitialValue + totalAdvancement;
+                    skill.AdvancementsList.Add(totalAdvancement);
+                }
+                else if (skill.IsSupported)
+                {
+                    var roll = RollD5();
+                    ThisCharacter.GestaltLevel -= 1;
+                    skill.Advancements += 1;
+                    totalAdvancement += roll;
+                    foreach (var ability in ThisCharacter.PlayerAbilities)
+                    {
+                        foreach (var playerSkill in ability.SupportsPlayerSkills)
+                        {
+                            if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
+                            {
+                                if (ability.BaseAbility.AdvancesSkills)
+                                {
+                                    totalAdvancement += ability.Tier;
+                                }
+                            }
+                        }
+                    }
+                    skill.Value = InitialValue + totalAdvancement;
+                    skill.AdvancementsList.Add(totalAdvancement);
+                }
+                else
+                {
+                    var roll = RollD5("Lowest");
+                    ThisCharacter.GestaltLevel -= 1;
+                    skill.Advancements += 1;
+                    skill.Value = InitialValue + roll;
+                    skill.AdvancementsList.Add(roll);
+                }
+            }
+
+            else if (skill.BaseSkill.Type == "Expert")
+            {
+                var roll = 0;
+                if (skill.IsSpecialized && skill.IsSupported)
+                {
+                    roll = RollD5();
+                }
+                else if (skill.IsSupported)
+                {
+                    roll = RollD5("Lowest");
+                }
+                else
+                {
+                    return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+                }
+
+                ThisCharacter.GestaltLevel -= 1;
+                skill.Advancements += 1;
+                totalAdvancement += roll;
+
+                foreach (var ability in ThisCharacter.PlayerAbilities)
+                {
+                    foreach (var playerSkill in ability.SupportsPlayerSkills)
+                    {
+                        if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
+                        {
+                            if (ability.BaseAbility.AdvancesSkills)
+                            {
+                                totalAdvancement += ability.Tier;
+                            }
+                        }
+                    }
+                }
+
+                skill.Value = InitialValue + totalAdvancement;
+                skill.AdvancementsList.Add(totalAdvancement);
+            }
+
+            if (skill.Advancements > 5)
+            {
+                var lastAdvancement = skill.AdvancementsList[^1];
+                ThisCharacter.GestaltLevel += 1;
+                skill.Advancements -= 1;
+                skill.Value -= lastAdvancement;
+                skill.AdvancementsList.Remove(lastAdvancement);
+            }
+
+            return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+        }
+
+        protected async Task<PlayerSkill> HandleDecreasePlayerSkill(PlayerSkill skill)
+        {
+            InitialValue = skill.Value;
+
+            if (skill.AdvancementsList.Count>0)
+            {
+                var lastAdvancement = skill.AdvancementsList[^1];
+                ThisCharacter.GestaltLevel += 1;
+                skill.Advancements -= 1;
+                skill.Value = InitialValue - lastAdvancement;
+                skill.AdvancementsList.Remove(skill.AdvancementsList[^1]);
+            }
+
+            return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+        }
+
+        protected void HandleSpecializeSkill(PlayerSkill skill)
+        {
+            var newPlayerSkill = new PlayerSkill
+            {
+                BaseSkill = skill.BaseSkill,
+                Value = skill.Value,
+                IsSupported = skill.IsSupported,
+                Advancements = skill.Advancements,
+                AdvancementsList = skill.AdvancementsList,
+                PlayerCharacter = skill.PlayerCharacter,
+                Notes = skill.Notes,
+                AttributeValue = skill.AttributeValue,
+                IsSpecialized = true
+            };
+
+            ThisPlayerSkill = newPlayerSkill;
+
+            onSpecializePlayerSkillToggleOn(ThisPlayerSkill);
+        }
+
         protected void InitializePlayerTrainingValues(BaseTrainingValue value)
         {
             var tempPlayerTrainingValue = new PlayerTrainingValue { BaseTrainingValue = value, Value = 0 };
@@ -965,6 +1242,7 @@ namespace OutbreakBlazor.Pages
             {
                 attribute.Points -= 1;
                 ability.AdvancedUsing.Add(Helper.FormString2);
+                HasInstruction = false;
             }
             else if (Helper.FormString2 == "gestalt")
             {
@@ -1000,7 +1278,7 @@ namespace OutbreakBlazor.Pages
             {
                 attribute.Points -= 1;
                 ability.AdvancedUsing.Add(Helper.FormString2);
-
+                HasInstruction = false;
             }
             else if (Helper.FormString2 == "gestalt")
             {
@@ -1036,7 +1314,7 @@ namespace OutbreakBlazor.Pages
             {
                 attribute.Points -= 1;
                 ability.AdvancedUsing.Add(Helper.FormString2);
-
+                HasInstruction = false;
             }
             else if (Helper.FormString2 == "gestalt")
             {
@@ -1073,6 +1351,27 @@ namespace OutbreakBlazor.Pages
             BaseSkillDescription.Toggle();
         }
 
+        protected BSModal SpecializePlayerSkill { get; set; }
+        protected void onSpecializePlayerSkillToggleOn(PlayerSkill skill)
+        {
+            ThisPlayerSkill = skill;
+            SpecializePlayerSkill.Toggle();
+        }
+        protected async Task onSpecializePlayerSkillToggleOff()
+        {
+            if (!string.IsNullOrWhiteSpace(ThisPlayerSkill.Notes))
+            {
+                var newPlayerSkill = await PlayerSkillService.CreatePlayerSkill(ThisPlayerSkill);
+
+                ThisCharacter.SpecializedPlayerSkills.Add(newPlayerSkill);
+
+                ThisPlayerSkill.Notes = "";
+                ThisPlayerSkill.IsSpecialized = false;
+            }
+            
+            SpecializePlayerSkill.Toggle();
+        }
+
         protected Array CsvStringToArray(string values)
         {
             return values.Split(',');
@@ -1089,9 +1388,18 @@ namespace OutbreakBlazor.Pages
             return playerAttribute.Value.ToString();
         }
 
-        protected string getPlayerSkillAdvancementsByBaseSkillName(string baseSkillName)
+        protected string getPlayerSkillAdvancementsByBaseSkillName(string baseSkillName, bool specialized = false)
         {
-            var skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
+            PlayerSkill skill;
+
+            if (specialized)
+            {
+                skill = ThisCharacter.SpecializedPlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
+            }
+            else
+            {
+                skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
+            }
 
             if (skill == null || skill.Advancements == 0)
             {
@@ -1101,9 +1409,18 @@ namespace OutbreakBlazor.Pages
             return skill.Advancements.ToString();
         }
 
-        protected string getPlayerSkillValueByBaseSkillName(string baseSkillName)
+        protected string getPlayerSkillValueByBaseSkillName(string baseSkillName, bool specialized = false)
         {
-            var skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
+            PlayerSkill skill;
+
+            if (specialized)
+            {
+                skill = ThisCharacter.SpecializedPlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
+            }
+            else
+            {
+                skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
+            }
 
             if (skill == null || skill.Value == 0)
             {
@@ -1111,6 +1428,27 @@ namespace OutbreakBlazor.Pages
             }
 
             return skill.Value.ToString();
+        }
+
+        protected string getPlayerSkillSpecialtyByBaseSkillName(string baseSkillName, bool specialized = false)
+        {
+            PlayerSkill skill;
+
+            if (specialized)
+            {
+                skill = ThisCharacter.SpecializedPlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
+            }
+            else
+            {
+                skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
+            }
+
+            if (skill == null || skill.Value == 0)
+            {
+                return "";
+            }
+
+            return skill.Notes.ToString();
         }
 
         protected string getPlayerTrainingValueValueByBaseTrainingValueName(string baseTrainingValueName)
@@ -1127,6 +1465,8 @@ namespace OutbreakBlazor.Pages
 
         public void GeneratePdf()
         {
+            var TempSpecializedSkills = ThisCharacter.SpecializedPlayerSkills;
+
             var spewFontSize = 20;
             var headerFontSize = 13;
             var resourcesFontSize = 12;
@@ -1187,15 +1527,30 @@ namespace OutbreakBlazor.Pages
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Digital Systems"), skillAdvancementsIndentLeft, 569, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Advanced Medicine"), skillAdvancementsIndentLeft, 603, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Craft/Construct/Engineer"), skillAdvancementsIndentLeft, 619, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentLeft, 635, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentLeft, 651, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentLeft, 667, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentLeft, 683, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Craft/Construct/Engineer") != null)
+            {
+                for (int i = 635; i < 684; i += 16)
+                {
+                    page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Craft/Construct/Engineer", true), skillAdvancementsIndentLeft, i, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+                    page0Labels.Add(new Label(getPlayerSkillSpecialtyByBaseSkillName("Craft/Construct/Engineer", true), skillAdvancementsIndentLeft +22, i-3, 504, 100, Font.Helvetica, skillsFontSize -1, TextAlign.Left));
+                    page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Craft/Construct/Engineer", true), skillIndentLeft, i-2, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+                    TempSpecializedSkills.Remove(
+                        TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Craft/Construct/Engineer"));
+                }
+            }
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Martial Arts"), skillAdvancementsIndentLeft, 699, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Pilot"), skillAdvancementsIndentLeft, 715, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentLeft, 731, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentLeft, 747, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-
+            if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot") != null)
+            {
+                for (int i = 731; i < 748; i += 16)
+                {
+                    page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Pilot", true), skillAdvancementsIndentLeft, i, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+                    page0Labels.Add(new Label(getPlayerSkillSpecialtyByBaseSkillName("Pilot", true), skillAdvancementsIndentLeft + 22, i - 3, 504, 100, Font.Helvetica, skillsFontSize - 1, TextAlign.Left));
+                    page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Pilot", true), skillIndentLeft, i - 2, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+                    TempSpecializedSkills.Remove(
+                        TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot"));
+                }
+            }
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Balance"), skillIndentLeft, 291, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Brawl"), skillIndentLeft, 307, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Climb"), skillIndentLeft, 323, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
@@ -1215,10 +1570,6 @@ namespace OutbreakBlazor.Pages
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Digital Systems"), skillIndentLeft, 566, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Advanced Medicine"), skillIndentLeft, 601, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Craft/Construct/Engineer"), skillIndentLeft, 617, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label("", skillIndentLeft, 633, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label("", skillIndentLeft, 649, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label("", skillIndentLeft, 665, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label("", skillIndentLeft, 681, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Martial Arts"), skillIndentLeft, 697, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Pilot"), skillIndentLeft, 713, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label("", skillIndentLeft, 729, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
@@ -1330,7 +1681,6 @@ namespace OutbreakBlazor.Pages
                 }
             }
             MergeDocument mergeDoc = new MergeDocument(GetPath(@".\wwwroot\CharacterSheets\OutbreakTemplate.pdf"));
-            System.Threading.Thread.Sleep(3000);
 
             Page page0 = mergeDoc.Pages[0];
             Page page1 = mergeDoc.Pages[1];

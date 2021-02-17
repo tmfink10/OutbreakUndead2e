@@ -1,369 +1,430 @@
 ﻿@page "/"
 @using InputType = BlazorStrap.InputType
+@using Color = BlazorStrap.Color
 @inherits IndexBase
 
-<h1 style="margin-bottom: 20px">Outbreak Undead 2e: Character Creator</h1>
 
 @if (_createNew == false)
 {
-<p>
-    Welcome to the character creator section. Character creation happens in three phases: <br />
-    1) Choose your character's core traits such as Name, Age, and S.P.E.W. attributes.<br />
-    2) Choose your character's attributes.<br />
-    3) Update your character's skills.<br /><br />
+    <h1 style="margin-bottom: 20px">Outbreak Undead 2e: Character Creator</h1>
 
-    You will spend Gestalt in each of the three phases to advance your stats. How to spend Gestalt is entirely a matter of preference. <br />
-    If you are unsure of where to start, try allocating it 1/3 to each of S.P.E.W Attributes, Abilities and Skills.<br />
-    Generally speaking, Attributes affect a wide variety of skills by a little bit. Abilities allow you to advance certain Skills more easily and<br />
-    may provide additional bonuses. Skills are the core of your competency; the chance of your success expressed as a percentage.<br /><br />
+    <p>
+        Welcome to the character creator section. Character creation happens in three phases: <br />
+        1) Choose your character's core traits such as Name, Age, and S.P.E.W. attributes.<br />
+        2) Choose your character's attributes.<br />
+        3) Update your character's skills.<br /><br />
 
-    Note, your GM may assign certain values to your character, like Gestalt, that differ from what is presented here. <br />
-    In that case, type in the numbers you need to start with...this is only a template, based on one way to create a character. <br /> <br />
+        You will spend Gestalt in each of the three phases to advance your stats. How to spend Gestalt is entirely a matter of preference. <br />
+        If you are unsure of where to start, try allocating it 1/3 to each of S.P.E.W Attributes, Abilities and Skills.<br />
+        Generally speaking, Attributes affect a wide variety of skills by a little bit. Abilities allow you to advance certain Skills more easily and<br />
+        may provide additional bonuses. Skills are the core of your competency; the chance of your success expressed as a percentage.<br /><br />
 
-    Striking the right balance between restrictive guidance and creative freedom is rather difficult.<br />
-    Just because you CAN do something in this tool does not mean that you SHOULD do it.<br />
-    If you are using this tool reasonably, it should respond in kind. If you wish to break it, it will let you.<br /><br />
+        Note, your GM may assign certain values to your character, like Gestalt, that differ from what is presented here. <br />
+        In that case, type in the numbers you need to start with...this is only a template, based on one way to create a character. <br /> <br />
 
-    Best of luck in your campaign and may the dice roll ever in your favor.<br /><br />
+        Striking the right balance between restrictive guidance and creative freedom is rather difficult.<br />
+        Just because you CAN do something in this tool does not mean that you SHOULD do it.<br />
+        If you are using this tool reasonably, it should respond in kind. If you wish to break it, it will let you.<br /><br />
 
-    <b>To learn more about most things, just click its name. Try it out by clicking on More Information below.</b><br /><br />
-    <div @onclick="@ToggleWelcomeModal">More Information</div>
+        Best of luck in your campaign and may the dice roll ever in your favor.<br /><br />
+
+        <b>To learn more about most things, just click its name. Try it out by clicking on More Information below.</b><br /><br />
+        <div @onclick="@ToggleWelcomeModal">More Information</div>
 
 
-</p>
-<button class="btn btn-primary" @onclick="HandleNewCharacterClick">Create New Character</button>
+    </p>
+    <button class="btn btn-primary" @onclick="HandleNewCharacterClick">Create New Character</button>
 
-<BSModal @ref="WelcomeModal" IsCentered="true">
-    <BSModalHeader OnClick="@ToggleWelcomeModal">More Information</BSModalHeader>
-    <BSModalBody>
-        <p>
-            Clicking on the text of interest to you will pull up a modal window with more information, where available.<br /><br />
-            All Attributes, Abilities, and Skills have more information behind them.
-        </p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleWelcomeModal">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
+    <BSModal @ref="WelcomeModal" IsCentered="true">
+        <BSModalHeader OnClick="@ToggleWelcomeModal">More Information</BSModalHeader>
+        <BSModalBody>
+            <p>
+                Clicking on the text of interest to you will pull up a modal window with more information, where available.<br /><br />
+                All Attributes, Abilities, and Skills have more information behind them.
+            </p>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleWelcomeModal">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
 }
 else
 {
-<EditForm Model="ThisCharacter" OnValidSubmit="HandleOnValidPlayerCharacterSubmit" style="margin-bottom: 15px">
-    <BSFormGroup>
-        <h2 style="margin-bottom: 5px">Basic Information</h2>
-        <BSRow Class="col-md-8" style="margin-bottom: 5px">
-            <BSCol>
-                <BSLabel For="characterFirstName">First Name</BSLabel>
-                <BSBasicInput class="form-control" Id="characterFirstName" InputType="InputType.Text" PlaceHolder="First Name" @bind-Value="ThisCharacter.FirstName" />
-            </BSCol>
-            <BSCol>
-                <BSLabel For="characterLastName">Last Name</BSLabel>
-                <BSBasicInput Id="characterLastName" InputType="InputType.Text" PlaceHolder="Last Name" @bind-Value="ThisCharacter.LastName" />
-            </BSCol>
-            <BSCol>
-                <BSLabel For="characterAge">Age</BSLabel>
-                <BSBasicInput Id="characterAge" InputType="InputType.Number" PlaceHolder="@ThisCharacter.Age" @bind-Value="ThisCharacter.Age" @onblur="SetGestalt" />
-            </BSCol>
-        </BSRow>
-        <h2 style="margin-bottom: 5px">S.P.E.W. Attributes</h2>
-        <BSRow Class="col-md-8" style="margin-bottom: 15px">
-            <BSCol>
-                <BSLabel For="characterStrength" @onclick="@onStrengthToggle">Strength    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points)</BSLabel>
-                <BSBasicInput Id="characterStrength"
-                              PlaceHolder="@StrengthService.Value"
-                              InputType="InputType.Number"
-                              @bind-Value="@StrengthService.Value"
-                              @onfocus="@(() => InitialValue = StrengthService.Value)"
-                              @onclick="@(() => HandleIncrementPlayerAttribute(StrengthService))" />
-            </BSCol>
-            <BSCol>
-                <BSLabel For="characterPerception" @onclick="@onPerceptionToggle">Perception    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points)</BSLabel>
-                <BSBasicInput Id="characterPerception"
-                              PlaceHolder="@PerceptionService.Value"
-                              InputType="InputType.Number"
-                              @bind-Value="PerceptionService.Value"
-                              @onfocus="(() => InitialValue = PerceptionService.Value)"
-                              @onclick="(() => HandleIncrementPlayerAttribute(PerceptionService))" />
-            </BSCol>
-            <BSCol>
-                <BSLabel For="characterEmpathy" @onclick="@onEmpathyToggle">Empathy    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points)</BSLabel>
-                <BSBasicInput Id="characterEmpathy"
-                              PlaceHolder="@EmpathyService.Value"
-                              InputType="InputType.Number"
-                              @bind-Value="EmpathyService.Value"
-                              @onfocus="(() => InitialValue = EmpathyService.Value)"
-                              @onclick="(() => HandleIncrementPlayerAttribute(EmpathyService))" />
-            </BSCol>
-            <BSCol>
-                <BSLabel For="characterWillpower" @onclick="@onWillpowerToggle">Willpower    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points)</BSLabel>
-                <BSBasicInput Id="characterWillpower"
-                              PlaceHolder="@WillpowerService.Value"
-                              InputType="InputType.Number"
-                              @bind-Value="WillpowerService.Value"
-                              @onfocus="(() => InitialValue = WillpowerService.Value)"
-                              @onclick="(() => HandleIncrementPlayerAttribute(WillpowerService))" />
-            </BSCol>
-        </BSRow>
-        <h3 style="margin-bottom: 5px">Character Resources</h3>
-        <BSRow Class="col-md-8" style="margin-bottom: 15px">
-            <BSCol>
-                <BSLabel For="survivalPoints" @onclick="ToggleSurvivalPointsDescription">Survival Points</BSLabel>
-                <BSBasicInput Id="survivalPoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.SurvivalPoints" @bind-Value="ThisCharacter.SurvivalPoints" />
-            </BSCol>
-            <BSCol>
-                <BSLabel For="gestaltLevel" @onclick="ToggleGestaltDescription">Gestalt Level</BSLabel>
-                <BSBasicInput Id="gestaltLevel" InputType="InputType.Number" PlaceHolder="@ThisCharacter.GestaltLevel" @bind-Value="ThisCharacter.GestaltLevel"></BSBasicInput>
-            </BSCol>
-            <BSCol>
-                <BSLabel For="competencePoints" @onclick="ToggleCompetencePointsDescription">Competence Points</BSLabel>
-                <BSBasicInput Id="competencePoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.CompetencePoints" @bind-Value="ThisCharacter.CompetencePoints"></BSBasicInput>
-            </BSCol>
-        </BSRow>
-    </BSFormGroup>
+    <h1 style="margin-bottom: 60px" align="center" class="col-md-8">Outbreak Undead 2e: Character Creator</h1>
+    <EditForm Model="ThisCharacter" OnValidSubmit="HandleOnValidPlayerCharacterSubmit" style="margin-bottom: 15px">
+        <BSFormGroup>
+            <h2 style="margin-bottom: 10px" align="center" class="col-md-8">Basic Information</h2>
+            <BSRow Class="col-md-8" style="margin-bottom: 5px">
+                <BSCol>
+                    <BSLabel For="characterFirstName">First Name</BSLabel>
+                    <BSBasicInput class="form-control" Id="characterFirstName" InputType="InputType.Text" PlaceHolder="First Name" @bind-Value="ThisCharacter.FirstName" />
+                </BSCol>
+                <BSCol>
+                    <BSLabel For="characterLastName">Last Name</BSLabel>
+                    <BSBasicInput Id="characterLastName" InputType="InputType.Text" PlaceHolder="Last Name" @bind-Value="ThisCharacter.LastName" />
+                </BSCol>
+                <BSCol>
+                    <BSLabel For="characterAge">Age</BSLabel>
+                    <BSBasicInput Id="characterAge" InputType="InputType.Number" PlaceHolder="@ThisCharacter.Age" @bind-Value="ThisCharacter.Age" @onblur="SetGestalt" />
+                </BSCol>
+            </BSRow>
+            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">S.P.E.W. Attributes</h2>
+            <BSRow Class="col-md-8" style="margin-bottom: 15px">
+                <BSCol>
+                    <BSLabel For="characterStrength" @onclick="@onStrengthToggle">Strength    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points)</BSLabel>
+                    <BSBasicInput Id="characterStrength"
+                                  PlaceHolder="@StrengthService.Value"
+                                  InputType="InputType.Number"
+                                  @bind-Value="@StrengthService.Value"
+                                  @onfocus="@(() => InitialValue = StrengthService.Value)"
+                                  @onclick="@(() => HandleIncrementPlayerAttribute(StrengthService))" />
+                </BSCol>
+                <BSCol>
+                    <BSLabel For="characterPerception" @onclick="@onPerceptionToggle">Perception    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points)</BSLabel>
+                    <BSBasicInput Id="characterPerception"
+                                  PlaceHolder="@PerceptionService.Value"
+                                  InputType="InputType.Number"
+                                  @bind-Value="PerceptionService.Value"
+                                  @onfocus="(() => InitialValue = PerceptionService.Value)"
+                                  @onclick="(() => HandleIncrementPlayerAttribute(PerceptionService))" />
+                </BSCol>
+                <BSCol>
+                    <BSLabel For="characterEmpathy" @onclick="@onEmpathyToggle">Empathy    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points)</BSLabel>
+                    <BSBasicInput Id="characterEmpathy"
+                                  PlaceHolder="@EmpathyService.Value"
+                                  InputType="InputType.Number"
+                                  @bind-Value="EmpathyService.Value"
+                                  @onfocus="(() => InitialValue = EmpathyService.Value)"
+                                  @onclick="(() => HandleIncrementPlayerAttribute(EmpathyService))" />
+                </BSCol>
+                <BSCol>
+                    <BSLabel For="characterWillpower" @onclick="@onWillpowerToggle">Willpower    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points)</BSLabel>
+                    <BSBasicInput Id="characterWillpower"
+                                  PlaceHolder="@WillpowerService.Value"
+                                  InputType="InputType.Number"
+                                  @bind-Value="WillpowerService.Value"
+                                  @onfocus="(() => InitialValue = WillpowerService.Value)"
+                                  @onclick="(() => HandleIncrementPlayerAttribute(WillpowerService))" />
+                </BSCol>
+            </BSRow>
+            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Character Resources</h2>
+            <BSRow Class="col-md-8" style="margin-bottom: 15px">
+                <BSCol>
+                    <BSLabel For="survivalPoints" @onclick="ToggleSurvivalPointsDescription">Survival Points</BSLabel>
+                    <BSBasicInput Id="survivalPoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.SurvivalPoints" @bind-Value="ThisCharacter.SurvivalPoints" />
+                </BSCol>
+                <BSCol>
+                    <BSLabel For="gestaltLevel" @onclick="ToggleGestaltDescription">Gestalt Level</BSLabel>
+                    <BSBasicInput Id="gestaltLevel" InputType="InputType.Number" PlaceHolder="@ThisCharacter.GestaltLevel" @bind-Value="ThisCharacter.GestaltLevel"></BSBasicInput>
+                </BSCol>
+                <BSCol>
+                    <BSLabel For="competencePoints" @onclick="ToggleCompetencePointsDescription">Competence Points</BSLabel>
+                    <BSBasicInput Id="competencePoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.CompetencePoints" @bind-Value="ThisCharacter.CompetencePoints"></BSBasicInput>
+                </BSCol>
+            </BSRow>
+        </BSFormGroup>
 
-    @if (_addAbilities == false)
+        @if (_addAbilities == false)
         {
-    <BSButton Color="BlazorStrap.Color.Primary" ButtonType="ButtonType.Submit" Class="align-right">Continue</BSButton>
+            <div class="text-centered col-md-8">
+                <BSButton Color="BlazorStrap.Color.Primary" ButtonType="ButtonType.Submit" style="width: 45%">Continue</BSButton>
+            </div>
         }
 
-</EditForm>
+    </EditForm>
 
-@if (_addAbilities == false)
+    @if (_addAbilities == false)
     {
 
     }
     else
     {
-<h2>Abilities</h2>
+        <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Abilities</h2>
 
-<BSForm Model="Helper" OnValidSubmit="HandleOnValidBaseAbilitySubmit">
-    <BSFormGroup>
-        <BSRow Class="col-md-8">
-            <BSCol>
-                <BSLabel For="baseAbility">Ability</BSLabel>
-                <BSBasicInput Id="baseAbility" InputType="InputType.Select" @bind-Value="Helper.FormString">
+        <BSForm Model="Helper" IsInline="true" OnValidSubmit="HandleOnValidBaseAbilitySubmit" style="margin-bottom: 10px">
+            <BSFormGroup>
+                <BSBasicInput Id="baseAbility"
+                              InputType="InputType.Select"
+                              @bind-Value="Helper.FormString"
+                              style="width: 980px; margin-right: 20px;">
                     <option value="">Select Ability</option>
                     @foreach (var ability in BaseAbilities)
                             {
-                    <option value="@ability.Id">@ability.Name</option>
+                        <option value="@ability.Id">@ability.Name</option>
                             }
                 </BSBasicInput>
-            </BSCol>
-            <BSCol Class="col-md-1">
-                <BSLabel For="formSubmit">Add</BSLabel>
                 <BSButton Id="formSubmit"
                           Color="BlazorStrap.Color.Primary"
                           ButtonType="ButtonType.Submit">Add</BSButton>
-            </BSCol>
-            @if (!string.IsNullOrEmpty(Helper.FormString))
-                    {
-            <BSCol Class="col-md-1">
-                <BSLabel For="baseAbilityDetails">Details</BSLabel>
-                <BSButton Id="baseAbilityDetails"
-                          ButtonType="ButtonType.Button"
-                          OnClick="(() => onBaseAbilityToggleOn(BaseAbilities.FirstOrDefault(a => a.Id == Int32.Parse(Helper.FormString))))">Description</BSButton>
-            </BSCol>
-                    }
-
-        </BSRow>
-    </BSFormGroup>
-</BSForm>
-
-<BSForm Model="ThisPlayerAbility" OnValidSubmit="HandleOnValidPlayerAbilitySubmit">
-    <BSTable class="col-md-8">
-        <thead>
-            <tr>
-                <th scope="col" style="width: 35%">Ability</th>
-                <th style="width: 15%">Tier</th>
-                <th style="width: 40%">Notes</th>
-                <th style="width: 5%"></th>
-                <th style="width: 5%"></th>
-            </tr>
-        </thead>
-        @foreach (var ability in ThisCharacter.PlayerAbilities)
-                {
-        <tbody>
-            <tr>
-                <th scope="row" @onclick="@(() => onBaseAbilityToggleOn(ability.BaseAbility))">@ability.BaseAbility.Name (@ability.AddedUsingBaseAttributeCode)</th>
-                <td>
-                    <InputNumber id="baseAbility"
-                                 class="form-control"
-                                 placeholder="@ability.Tier"
-                                 @bind-Value="ability.Tier"
-                                 @onfocus="(() => InitialValue = ability.Tier)"
-                                 @onchange="(() => InitialValue = ability.Tier)"
-                                 @onclick="(() => HandleIncrementPlayerAbility(ability))" />
-                </td>
-                <td><InputText class="form-control" @bind-Value="@ability.Notes" placeholder="@ability.Notes" /></td>
-                <td>
-                    <BSButton ButtonType="ButtonType.Button"
-                              @onclick="(() => DeletePlayerAbility(ability))"
-                              Class="btn-danger">X</BSButton>
-                </td>
-            </tr>
-        </tbody>
-                }
-    </BSTable>
-</BSForm>
-
-        if (_addSkills == false)
+                <BSCol Class="col-md-1">
+                    <BSButton Id="baseAbilityDetails"
+                              ButtonType="ButtonType.Button"
+                              OnClick="(() => onBaseAbilityToggleOn(BaseAbilities.FirstOrDefault(a => a.Id == Int32.Parse(Helper.FormString))))"
+                              IsDisabled="string.IsNullOrWhiteSpace(Helper.FormString)">Description</BSButton>
+                </BSCol>
+            </BSFormGroup>
+        </BSForm>
+        @if (ThisCharacter.PlayerAbilities.Count > 0)
         {
-<button class="btn btn-primary" @onclick="@HandleToggleSkills">Continue</button>
+            <BSForm Model="ThisPlayerAbility" OnValidSubmit="HandleOnValidPlayerAbilitySubmit" IsInline="true">
+                <BSTable class="col-md-8">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 35%">Ability</th>
+                            <th style="width: 15%">Tier</th>
+                            <th style="width: 40%">Notes</th>
+                            <th style="width: 5%"></th>
+                            <th style="width: 5%"></th>
+                        </tr>
+                    </thead>
+                    @foreach (var ability in ThisCharacter.PlayerAbilities)
+                    {
+                        <tbody>
+                            <tr>
+                                <th scope="row" @onclick="@(() => onBaseAbilityToggleOn(ability.BaseAbility))">@ability.BaseAbility.ShortName (@ability.AddedUsingBaseAttributeCode)</th>
+                                <td>
+                                    <BSButton Color="Color.Danger" @onclick="(()=>HandleDecreasePlayerAbility(ability))"> -</BSButton>
+                                    <BSInput InputType="InputType.Number"
+                                             Class="text-center"
+                                             IsDisabled="true"
+                                             @bind-Value="ability.Tier"
+                                             @onfocus="(() => InitialValue = ability.Tier)"
+                                             @onchange="(() => InitialValue = ability.Tier)"
+                                             @onclick="(() => HandleIncrementPlayerAbility(ability))"
+                                             style="width: 50px;" />
+                                    <BSButton Color="Color.Success" @onclick="(()=>HandleIncreasePlayerAbility(ability))">+</BSButton>
+                                </td>
+                                <td>
+                                    <InputText class="form-control"
+                                               style="width:500px;"
+                                               @bind-Value="@ability.Notes" />
+                                </td>
+                                <td>
+                                    <BSButton ButtonType="ButtonType.Button"
+                                              @onclick="(() => DeletePlayerAbility(ability))"
+                                              Class="btn-danger">X</BSButton>
+                                </td>
+                            </tr>
+                        </tbody>
+                    }
+                </BSTable>
+            </BSForm>
+        }
+
+        @if (_addSkills == false)
+        {
+            <div class="text-centered col-md-8">
+                <BSButton style="width: 45%" @onclick="HandleToggleSkills">Continue</BSButton>
+            </div>
         }
         else
         {
-<h2>Skills</h2>
-<div class="card-columns col-md-8">
-    @foreach (var skill in ThisCharacter.PlayerSkills)
+            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Skills</h2>
+            <div class="card-columns col-md-8">
+                @foreach (var skill in ThisCharacter.PlayerSkills)
                 {
-    <div class="card">
-        <BSForm Model="skill">
-            <div class="card-title text-center" @onclick="@(() => onBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</div>
-            <div class="card-body">
-                @*<div class="row">
-                        <BSInput InputType="InputType.Checkbox" @bind-Value="skill.IsSpecialized">Specialize</BSInput>
-                    </div>*@
-                <div class="row">
-                    <BSInput InputType="InputType.Number"
-                             @bind-Value="skill.Value"
-                             @onfocus="(() => InitialValue = skill.Value)"
-                             @onchange="(() => InitialValue = skill.Value)"
-                             @onclick="(() => HandleIncrementPlayerSkill(skill))"
-                             class="text-center" />
-                </div>
+                    <div class="card">
+                        <BSForm IsInline="true" Model="skill">
+                            <BSCard Alignment="Alignment.Center">
+                                <BSCard CardType="CardType.Header">
+                                    <BSCard CardType="CardType.Title" @onclick="(() => onBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</BSCard>
+                                    <BSCard CardType="CardType.Title">@skill.Notes</BSCard>
+                                </BSCard>
+                                <BSCard CardType="CardType.Body">
+                                    <BSButton Color="Color.Danger" @onclick="(()=>HandleDecreasePlayerSkill(skill))">-</BSButton>
+                                    <BSInput InputType="InputType.Number"
+                                             IsDisabled="true"
+                                             Size="Size.Large"
+                                             Class="text-center"
+                                             @bind-Value="skill.Value"
+                                             style="width: 75px;" />
+                                    <BSButton Color="Color.Success" @onclick="(()=> HandleIncreasePlayerSkill(skill))">+</BSButton>
+                                </BSCard>
+                                @if (string.IsNullOrWhiteSpace(skill.Notes))
+                                {
+                                    <BSCard CardType="CardType.Footer">
+                                        <BSButton Color="Color.Light" Size="Size.Large" @onclick="(()=>HandleSpecializeSkill(skill))">Specialize</BSButton>
+                                    </BSCard>
+                                }
+                                else
+                                {
+                                    <BSCard CardType="CardType.Footer"></BSCard>
+                                }
+                            </BSCard>
+                        </BSForm>
+                    </div>
+                }
             </div>
-        </BSForm>
-    </div>
-                }
-</div>
-<h2>Training Values</h2>
-<div class="card-columns col-md-8">
-    @foreach (var value in ThisCharacter.TrainingValues)
+            @if (ThisCharacter.SpecializedPlayerSkills.Count > 0)
+            {
+                <h4 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Specialized Skills</h4>
+                <div class="card-columns col-md-8">
+                    @foreach (var skill in ThisCharacter.SpecializedPlayerSkills)
+                    {
+                        <div class="card">
+                            <BSForm IsInline="true" Model="skill">
+                                <BSCard Alignment="Alignment.Center">
+                                    <BSCard CardType="CardType.Header">
+                                        <BSCard CardType="CardType.Title" @onclick="(() => onBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</BSCard>
+                                        <BSCard CardType="CardType.Title">@skill.Notes</BSCard>
+                                    </BSCard>
+                                    <BSCard CardType="CardType.Body">
+                                        <BSButton Color="Color.Danger" @onclick="(()=>HandleDecreasePlayerSkill(skill))">-</BSButton>
+                                        <BSInput InputType="InputType.Number"
+                                                 IsDisabled="true"
+                                                 Size="Size.Large"
+                                                 Class="text-center"
+                                                 @bind-Value="skill.Value"
+                                                 style="width: 75px;" />
+                                        <BSButton Color="Color.Success" @onclick="(()=> HandleIncreasePlayerSkill(skill))">+</BSButton>
+                                    </BSCard>
+                                    @if (string.IsNullOrWhiteSpace(skill.Notes))
+                                    {
+                                        <BSCard CardType="CardType.Footer">
+                                            <BSButton Color="Color.Light" Size="Size.Large" @onclick="(()=>HandleSpecializeSkill(skill))">Specialize</BSButton>
+                                        </BSCard>
+                                    }
+                                    else
+                                    {
+                                        <BSCard CardType="CardType.Footer"></BSCard>
+                                    }
+                                </BSCard>
+                            </BSForm>
+                        </div>
+                    }
+                </div>
+            }
+
+            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Training Values</h2>
+            <div class="card-columns col-md-8">
+                @foreach (var value in ThisCharacter.TrainingValues)
                 {
-    <div class="card">
-        <div class="card-title text-center">@value.BaseTrainingValue.Name</div>
-        <div class="card-body text-center">@value.Value</div>
-    </div>
+                    <BSCard Alignment="Alignment.Center">
+                        <BSCard CardType="CardType.Header">
+                            <BSCard CardType="CardType.Title">@value.BaseTrainingValue.Name</BSCard>
+                        </BSCard>
+                        <BSCard CardType="CardType.Body" Class="text-lg-center">@value.Value</BSCard>
+                    </BSCard>
                 }
-</div>
-<button class="btn btn-primary" @onclick="GeneratePdf">Generate Character Sheet</button>
+            </div>
+            <div class="text-centered col-md-8">
+                <BSButton style="width: 45%; margin-bottom: 10px;" @onclick="GeneratePdf">Generate Character Sheet</BSButton>
+            </div>
             if (CharacterSheetLocation != null)
             {
-<iframe src="@CharacterSheetLocation" height="1000px" width="100%"></iframe>
+                <iframe src="@CharacterSheetLocation" height="1000px" width="100%"></iframe>
             }
+
         }
     }
 
-
-
-
-<BSModal @ref="GestaltDescription" IsCentered="true">
-    <BSModalHeader OnClick="@ToggleGestaltDescription">Gestalt</BSModalHeader>
-    <BSModalBody>
-        <p>
-            Gestalt is an additional statistic that is a measure of character knowledge versus player knowledge.
-            When playing Yourself as a Character, these are generally considered to be the same, but even in that situation there will eventually be a large disparity between what the character knows and what a player knows.
-            For this reason, players who wish to appeal to character knowledge over their own can treat a character’s Gestalt Level as being a Primary Attribute to checks of this kind.
-            Gestalt Levels are reduced for characters to advance Core Attributes, Skills and Traits. In this case the generalized knowledge represented by Gestalt Level is given a more specific outlet.
-        </p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleGestaltDescription">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
-<BSModal @ref="SurvivalPointsDescription" IsCentered="true">
-    <BSModalHeader OnClick="@ToggleSurvivalPointsDescription">Survival Points</BSModalHeader>
-    <BSModalBody>
-        <p>
-            Survival Points are a resource earned by characters from undertaking Missions and completing Objectives.
-            These can be used to increase Gestalt Level but they are also used for other purposes such as acquiring useful Gear and activating special Tactics in the field.
-            This is the most useful of a player character’s resources because it is so multi-purpose in application. Survival Points are also lost when characters (or their fellow survivors) get injured or die.
-            This provides a metagame escape hatch that allows a character that suffers a fatal injury to survive by sacrificing some of their Survival Points to represent
-            the poor choices that the player character made that ultimately got them injured or killed.
-        </p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleSurvivalPointsDescription">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
-<BSModal @ref="CompetencePointsDescription" IsCentered="true">
-    <BSModalHeader OnClick="@ToggleCompetencePointsDescription">Competence Points</BSModalHeader>
-    <BSModalBody>
-        <p>
-            A player can represent their character’s own passive efforts, knowledge and skills. All characters and non-player characters have time throughout the day to do tasks.
-            General upkeep is determined by a general Labor Value to determine how much maintenance a character, their gear and Stronghold needs.
-            By sticking to “Plan A” they have an increased ability to accomplish these tasks quickly and without incident. This is represented with Competence Points (CP).
-            Competence Points are not an Attribute or a stat, since all characters and non-player characters have the same hours in the day to spend doing things,
-            and what they do can play to their strengths and serve a variety of needs, both immediate and long term.<br /> <br />
-
-            At the beginning of each day or start of each session, a character has access to a certain number of Competence Points.
-        </p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleCompetencePointsDescription">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
-
-<BSModal @ref="StrengthDescription" IsCentered="true">
-    <BSModalHeader OnClick="@onStrengthToggle">Strength</BSModalHeader>
-    <BSModalBody>
-        <p>@((MarkupString) StrengthService.BaseAttribute.HtmlDescription)</p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onStrengthToggle">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
-
-<BSModal @ref="PerceptionDescription" IsCentered="true">
-    <BSModalHeader OnClick="@onPerceptionToggle">Perception</BSModalHeader>
-    <BSModalBody>
-        <p>@((MarkupString) PerceptionService.BaseAttribute.HtmlDescription)</p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onPerceptionToggle">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
-
-<BSModal @ref="EmpathyDescription" IsCentered="true">
-    <BSModalHeader OnClick="@onEmpathyToggle">Empathy</BSModalHeader>
-    <BSModalBody>
-        <p>@((MarkupString) EmpathyService.BaseAttribute.HtmlDescription)</p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onEmpathyToggle">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
-
-<BSModal @ref="WillpowerDescription" IsCentered="true">
-    <BSModalHeader OnClick="@onWillpowerToggle">Willpower</BSModalHeader>
-    <BSModalBody>
-        <p>@((MarkupString) WillpowerService.BaseAttribute.HtmlDescription)</p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onWillpowerToggle">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
-
-<BSModal @ref="BaseAbilityDescription" IsCentered="true">
-    <BSModalHeader OnClick="@onBaseAbilityToggleOff">@ThisBaseAbility.Name</BSModalHeader>
-    <BSModalBody>
-        <p>@((MarkupString) ThisBaseAbility.HtmlDescription)</p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onBaseAbilityToggleOff">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
-
-<BSModal @ref="PlayerAbilityAttributeSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-    <BSModalHeader>Select Attribute with which to add @ThisBaseAbility.Name</BSModalHeader>
-    <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
+    <BSModal @ref="GestaltDescription" IsCentered="true">
+        <BSModalHeader OnClick="@ToggleGestaltDescription">Gestalt</BSModalHeader>
         <BSModalBody>
-            @if (ThisPlayerAbility.BaseAbility != null)
+            <p>
+                Gestalt is an additional statistic that is a measure of character knowledge versus player knowledge.
+                When playing Yourself as a Character, these are generally considered to be the same, but even in that situation there will eventually be a large disparity between what the character knows and what a player knows.
+                For this reason, players who wish to appeal to character knowledge over their own can treat a character’s Gestalt Level as being a Primary Attribute to checks of this kind.
+                Gestalt Levels are reduced for characters to advance Core Attributes, Skills and Traits. In this case the generalized knowledge represented by Gestalt Level is given a more specific outlet.
+            </p>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleGestaltDescription">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+    <BSModal @ref="SurvivalPointsDescription" IsCentered="true">
+        <BSModalHeader OnClick="@ToggleSurvivalPointsDescription">Survival Points</BSModalHeader>
+        <BSModalBody>
+            <p>
+                Survival Points are a resource earned by characters from undertaking Missions and completing Objectives.
+                These can be used to increase Gestalt Level but they are also used for other purposes such as acquiring useful Gear and activating special Tactics in the field.
+                This is the most useful of a player character’s resources because it is so multi-purpose in application. Survival Points are also lost when characters (or their fellow survivors) get injured or die.
+                This provides a metagame escape hatch that allows a character that suffers a fatal injury to survive by sacrificing some of their Survival Points to represent
+                the poor choices that the player character made that ultimately got them injured or killed.
+            </p>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleSurvivalPointsDescription">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+    <BSModal @ref="CompetencePointsDescription" IsCentered="true">
+        <BSModalHeader OnClick="@ToggleCompetencePointsDescription">Competence Points</BSModalHeader>
+        <BSModalBody>
+            <p>
+                A player can represent their character’s own passive efforts, knowledge and skills. All characters and non-player characters have time throughout the day to do tasks.
+                General upkeep is determined by a general Labor Value to determine how much maintenance a character, their gear and Stronghold needs.
+                By sticking to “Plan A” they have an increased ability to accomplish these tasks quickly and without incident. This is represented with Competence Points (CP).
+                Competence Points are not an Attribute or a stat, since all characters and non-player characters have the same hours in the day to spend doing things,
+                and what they do can play to their strengths and serve a variety of needs, both immediate and long term.<br /> <br />
+
+                At the beginning of each day or start of each session, a character has access to a certain number of Competence Points.
+            </p>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleCompetencePointsDescription">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="StrengthDescription" IsCentered="true">
+        <BSModalHeader OnClick="@onStrengthToggle">Strength</BSModalHeader>
+        <BSModalBody>
+            <p>@((MarkupString) StrengthService.BaseAttribute.HtmlDescription)</p>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onStrengthToggle">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="PerceptionDescription" IsCentered="true">
+        <BSModalHeader OnClick="@onPerceptionToggle">Perception</BSModalHeader>
+        <BSModalBody>
+            <p>@((MarkupString) PerceptionService.BaseAttribute.HtmlDescription)</p>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onPerceptionToggle">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="EmpathyDescription" IsCentered="true">
+        <BSModalHeader OnClick="@onEmpathyToggle">Empathy</BSModalHeader>
+        <BSModalBody>
+            <p>@((MarkupString) EmpathyService.BaseAttribute.HtmlDescription)</p>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onEmpathyToggle">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="WillpowerDescription" IsCentered="true">
+        <BSModalHeader OnClick="@onWillpowerToggle">Willpower</BSModalHeader>
+        <BSModalBody>
+            <p>@((MarkupString) WillpowerService.BaseAttribute.HtmlDescription)</p>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onWillpowerToggle">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="BaseAbilityDescription" IsCentered="true">
+        <BSModalHeader OnClick="@onBaseAbilityToggleOff">@ThisBaseAbility.Name</BSModalHeader>
+        <BSModalBody>
+            <p>@((MarkupString) ThisBaseAbility.HtmlDescription)</p>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onBaseAbilityToggleOff">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="PlayerAbilityAttributeSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Select Attribute with which to add @ThisBaseAbility.Name</BSModalHeader>
+        <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
+            <BSModalBody>
+                @if (ThisPlayerAbility.BaseAbility != null)
                 {
                     <InputRadioGroup @bind-Value="ThisPlayerAbility.AddedUsingBaseAttributeCode">
                         @foreach (var attributeX in ThisPlayerAbility.BaseAbility.UsesBaseAttributes)
                                 {
-                        <InputRadio Value="attributeX.Name" />  @attributeX.Name  <br />
+                            <InputRadio Value="attributeX.Name" /> @attributeX.Name <br />
                                 }
                     </InputRadioGroup>
                     <br / />
@@ -373,99 +434,110 @@ else
                         <option value="points">Attribute Points</option>
                         <option value="gestalt">Gestalt</option>
                     </BSBasicInput>
-                    <br/>
+                    <br />
                     @if (ThisPlayerAbility.BaseAbility != null)
                     {
-                        @if(ThisPlayerAbility.BaseAbility.IsProfessional)
+                        @if (ThisPlayerAbility.BaseAbility.IsProfessional)
                         {
                             <BSFormGroup IsCheck="true">
-                                <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction"/>
+                                <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
                                 <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
                             </BSFormGroup>
                         }
                     }
-                    
+
                 }
-        </BSModalBody>
-        <BSModalFooter>
-            @if (ThisPlayerAbility.AddedUsingBaseAttributeCode != null && !string.IsNullOrWhiteSpace(Helper.FormString2))
+            </BSModalBody>
+            <BSModalFooter>
+                @if (ThisPlayerAbility.AddedUsingBaseAttributeCode != null && !string.IsNullOrWhiteSpace(Helper.FormString2))
                 {
-            <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilityToggleOff(ThisPlayerAbility))">Ok</BSButton>
+                    <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilityToggleOff(ThisPlayerAbility))">Ok</BSButton>
                 }
-        </BSModalFooter>
-    </EditForm>
+            </BSModalFooter>
+        </EditForm>
 
-</BSModal>
+    </BSModal>
 
-<BSModal @ref="PlayerAbilitySingleAttributeAddSpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-    <BSModalHeader>Select how to pay for @ThisBaseAbility.Name advancement</BSModalHeader>
-    <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
+    <BSModal @ref="PlayerAbilitySingleAttributeAddSpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Select how to pay for @ThisBaseAbility.Name advancement</BSModalHeader>
+        <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
+            <BSModalBody>
+                <BSBasicInput InputType="InputType.Select" @bind-Value="Helper.FormString2">
+                    <option value="">Choose Gestalt or Attribute Points</option>
+                    <option value="points">Attribute Points</option>
+                    <option value="gestalt">Gestalt</option>
+                </BSBasicInput>
+                <br />
+                @if (ThisPlayerAbility.BaseAbility != null)
+                {
+                    @if (ThisPlayerAbility.BaseAbility.IsProfessional)
+                    {
+                        <BSFormGroup IsCheck="true">
+                            <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
+                            <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
+                        </BSFormGroup>
+                    }
+                }
+
+            </BSModalBody>
+            <BSModalFooter>
+                @if (!string.IsNullOrWhiteSpace(Helper.FormString2))
+                {
+                    <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySingleAttributeAddSpendSelectionToggleOff(ThisPlayerAbility))">Ok</BSButton>
+                }
+            </BSModalFooter>
+        </EditForm>
+    </BSModal>
+
+    <BSModal @ref="PlayerAbilitySpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Select how to pay for @ThisBaseAbility.Name advancement</BSModalHeader>
+        <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
+            <BSModalBody>
+                <BSBasicInput InputType="InputType.Select" @bind-Value="Helper.FormString2">
+                    <option value="">Choose Gestalt or Attribute Points</option>
+                    <option value="points">Attribute Points</option>
+                    <option value="gestalt">Gestalt</option>
+                </BSBasicInput>
+                <br />
+                @if (ThisPlayerAbility.BaseAbility != null)
+                {
+                    @if (ThisPlayerAbility.BaseAbility.IsProfessional)
+                    {
+                        <BSFormGroup IsCheck="true">
+                            <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
+                            <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
+                        </BSFormGroup>
+                    }
+                }
+            </BSModalBody>
+            <BSModalFooter>
+                @if (!string.IsNullOrWhiteSpace(Helper.FormString2))
+                {
+                    <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySpendSelectionToggleOff(ThisPlayerAbility))">Ok</BSButton>
+                }
+            </BSModalFooter>
+        </EditForm>
+    </BSModal>
+
+    <BSModal @ref="BaseSkillDescription" IsCentered="true">
+        <BSModalHeader OnClick="@onBaseSkillToggleOff">@ThisBaseSkill.Name</BSModalHeader>
         <BSModalBody>
-            <BSBasicInput InputType="InputType.Select" @bind-Value="Helper.FormString2">
-                <option value="">Choose Gestalt or Attribute Points</option>
-                <option value="points">Attribute Points</option>
-                <option value="gestalt">Gestalt</option>
-            </BSBasicInput>
-            <br />
-            @if (ThisPlayerAbility.BaseAbility != null)
-            {
-                @if(ThisPlayerAbility.BaseAbility.IsProfessional)
-                {
-                    <BSFormGroup IsCheck="true">
-                        <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction"/>
-                        <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
-                    </BSFormGroup>
-                }
-            }
-            
+            <p>@((MarkupString) ThisBaseSkill.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            @if (!string.IsNullOrWhiteSpace(Helper.FormString2))
-                {
-            <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySingleAttributeAddSpendSelectionToggleOff(ThisPlayerAbility))">Ok</BSButton>
-                }
+            <BSButton Color="Color.Primary" OnClick="@onBaseSkillToggleOff">Ok</BSButton>
         </BSModalFooter>
-    </EditForm>
-</BSModal>
+    </BSModal>
 
-<BSModal @ref="PlayerAbilitySpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-    <BSModalHeader>Select how to pay for @ThisBaseAbility.Name advancement</BSModalHeader>
-    <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
+    <BSModal @ref="SpecializePlayerSkill" IsCentered="true">
+        <BSModalHeader>Specialize @ThisPlayerSkill.BaseSkill.Name</BSModalHeader>
         <BSModalBody>
-            <BSBasicInput InputType="InputType.Select" @bind-Value="Helper.FormString2">
-                <option value="">Choose Gestalt or Attribute Points</option>
-                <option value="points">Attribute Points</option>
-                <option value="gestalt">Gestalt</option>
-            </BSBasicInput>
-            <br/>
-            @if(ThisPlayerAbility.BaseAbility != null)
-            {
-                @if(ThisPlayerAbility.BaseAbility.IsProfessional)
-                {
-                    <BSFormGroup IsCheck="true">
-                        <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction"/>
-                        <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
-                    </BSFormGroup>
-                }
-            }
+            <BSForm Model="ThisPlayerSkill" OnValidSubmit="(onSpecializePlayerSkillToggleOff)">
+                <BSInput InputType="InputType.Text" @bind-Value="ThisPlayerSkill.Notes">Specialty:</BSInput>
+            </BSForm>
         </BSModalBody>
         <BSModalFooter>
-            @if (!string.IsNullOrWhiteSpace(Helper.FormString2))
-                {
-            <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySpendSelectionToggleOff(ThisPlayerAbility))">Ok</BSButton>
-                }
+            <BSButton ButtonType="ButtonType.Submit" OnClick="(onSpecializePlayerSkillToggleOff)">Ok</BSButton>
         </BSModalFooter>
-    </EditForm>
-</BSModal>
-
-<BSModal @ref="BaseSkillDescription" IsCentered="true">
-    <BSModalHeader OnClick="@onBaseSkillToggleOff">@ThisBaseSkill.Name</BSModalHeader>
-    <BSModalBody>
-        <p>@((MarkupString) ThisBaseSkill.HtmlDescription)</p>
-    </BSModalBody>
-    <BSModalFooter>
-        <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onBaseSkillToggleOff">Ok</BSButton>
-    </BSModalFooter>
-</BSModal>
-
+    </BSModal>
 }
