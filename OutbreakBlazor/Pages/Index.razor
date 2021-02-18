@@ -412,53 +412,11 @@ else
                 {
                     <InputRadioGroup @bind-Value="ThisPlayerAbility.AddedUsingBaseAttributeCode">
                         @foreach (var attributeX in ThisPlayerAbility.BaseAbility.UsesBaseAttributes)
-                                {
-                            <InputRadio Value="attributeX.Name" /> @attributeX.Name <br />
-                                }
-                    </InputRadioGroup>
-                    <br / />
-                    <p>Add using:</p>
-                    <BSBasicInput InputType="InputType.Select" @bind-Value="Helper.FormString2">
-                        <option value="">Choose Gestalt or Attribute Points</option>
-                        <option value="points">Attribute Points</option>
-                        <option value="gestalt">Gestalt</option>
-                    </BSBasicInput>
-                    <br />
-                    @if (ThisPlayerAbility.BaseAbility != null)
-                    {
-                        @if (ThisPlayerAbility.BaseAbility.IsProfessional)
                         {
-                            <BSFormGroup IsCheck="true">
-                                <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
-                                <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
-                            </BSFormGroup>
+                            <InputRadio Value="attributeX.Name" /> @attributeX.Name <br />
                         }
-                    }
-
-                }
-            </BSModalBody>
-            <BSModalFooter>
-                @if (ThisPlayerAbility.AddedUsingBaseAttributeCode != null && !string.IsNullOrWhiteSpace(Helper.FormString2))
-                {
-                    <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilityToggleOff(ThisPlayerAbility))">Ok</BSButton>
-                }
-            </BSModalFooter>
-        </EditForm>
-
-    </BSModal>
-
-    <BSModal @ref="PlayerAbilitySingleAttributeAddSpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-        <BSModalHeader>Select how to pay for @ThisBaseAbility.Name advancement</BSModalHeader>
-        <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
-            <BSModalBody>
-                <BSBasicInput InputType="InputType.Select" @bind-Value="Helper.FormString2">
-                    <option value="">Choose Gestalt or Attribute Points</option>
-                    <option value="points">Attribute Points</option>
-                    <option value="gestalt">Gestalt</option>
-                </BSBasicInput>
-                <br />
-                @if (ThisPlayerAbility.BaseAbility != null)
-                {
+                    </InputRadioGroup>
+                    <br />
                     @if (ThisPlayerAbility.BaseAbility.IsProfessional)
                     {
                         <BSFormGroup IsCheck="true">
@@ -467,44 +425,52 @@ else
                         </BSFormGroup>
                     }
                 }
-
+                <br />
+                <BSButton ButtonType="ButtonType.Submit"
+                          @onclick="(() => onPlayerAbilityToggleOffUsingGestalt(ThisPlayerAbility))"
+                          IsDisabled="string.IsNullOrWhiteSpace(ThisPlayerAbility.AddedUsingBaseAttributeCode)"
+                          style="width: 40%">Gestalt Levels</BSButton>
+                <BSButton ButtonType="ButtonType.Submit"
+                          @onclick="(() => onPlayerAbilityToggleOffUsingPoints(ThisPlayerAbility))"
+                          IsDisabled="string.IsNullOrWhiteSpace(ThisPlayerAbility.AddedUsingBaseAttributeCode)"
+                          style="width: 40%">Attribute Points</BSButton>
             </BSModalBody>
-            <BSModalFooter>
-                @if (!string.IsNullOrWhiteSpace(Helper.FormString2))
-                {
-                    <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySingleAttributeAddSpendSelectionToggleOff(ThisPlayerAbility))">Ok</BSButton>
-                }
-            </BSModalFooter>
         </EditForm>
+    </BSModal>
+
+    <BSModal @ref="PlayerAbilitySingleAttributeAddSpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Select how to pay for @ThisBaseAbility.Name advancement</BSModalHeader>
+        <BSForm Model="ThisPlayerAbility" IsInline="true" OnValidSubmit="UpdateThisPlayerAttribute">
+            <BSModalBody>
+                @if (ThisPlayerAbility.BaseAbility.IsProfessional)
+                {
+                    <BSFormGroup IsCheck="true">
+                        <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
+                        <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
+                    </BSFormGroup>
+                }
+                <br />
+                <BSButton ButtonType="ButtonType.Submit" @onclick="(()=>onPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
+                <BSButton ButtonType="ButtonType.Submit" @onclick="(()=>onPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
+            </BSModalBody>
+        </BSForm>
     </BSModal>
 
     <BSModal @ref="PlayerAbilitySpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
         <BSModalHeader>Select how to pay for @ThisBaseAbility.Name advancement</BSModalHeader>
         <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
             <BSModalBody>
-                <BSBasicInput InputType="InputType.Select" @bind-Value="Helper.FormString2">
-                    <option value="">Choose Gestalt or Attribute Points</option>
-                    <option value="points">Attribute Points</option>
-                    <option value="gestalt">Gestalt</option>
-                </BSBasicInput>
+                @if (ThisPlayerAbility.BaseAbility.IsProfessional)
+                {
+                    <BSFormGroup IsCheck="true">
+                        <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
+                        <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
+                    </BSFormGroup>
+                }
                 <br />
-                @if (ThisPlayerAbility.BaseAbility != null)
-                {
-                    @if (ThisPlayerAbility.BaseAbility.IsProfessional)
-                    {
-                        <BSFormGroup IsCheck="true">
-                            <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
-                            <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
-                        </BSFormGroup>
-                    }
-                }
+                <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
+                <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
             </BSModalBody>
-            <BSModalFooter>
-                @if (!string.IsNullOrWhiteSpace(Helper.FormString2))
-                {
-                    <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySpendSelectionToggleOff(ThisPlayerAbility))">Ok</BSButton>
-                }
-            </BSModalFooter>
         </EditForm>
     </BSModal>
 

@@ -95,8 +95,8 @@ namespace OutbreakBlazor.Pages
         public PlayerCharacter ThisCharacter = new PlayerCharacter();
         protected BaseAbility ThisBaseAbility = new BaseAbility();
         protected BaseSkill ThisBaseSkill = new BaseSkill();
-        protected PlayerAbility ThisPlayerAbility = new PlayerAbility();
-        protected PlayerAttribute ThisPlayerAttribute = new PlayerAttribute();
+        protected PlayerAbility ThisPlayerAbility = new PlayerAbility(){BaseAbility = new BaseAbility()};
+        protected PlayerAttribute ThisPlayerAttribute = new PlayerAttribute() {BaseAttribute = new BaseAttribute()};
 
         protected PlayerSkill ThisPlayerSkill = new PlayerSkill()
         {
@@ -1285,34 +1285,34 @@ namespace OutbreakBlazor.Pages
             ThisBaseAbility = ThisPlayerAbility.BaseAbility;
             PlayerAbilityAttributeSelection.Toggle();
         }
-        protected void onPlayerAbilityToggleOff(PlayerAbility ability)
+        protected void onPlayerAbilityToggleOffUsingPoints(PlayerAbility ability)
         {
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
-            if (Helper.FormString2 == "points")
-            {
-                attribute.Points -= 1;
-                ability.AdvancedUsing.Add(Helper.FormString2);
-                HasInstruction = false;
-            }
-            else if (Helper.FormString2 == "gestalt")
-            {
-                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-                ability.AdvancedUsing.Add(Helper.FormString2);
-
-                if (ability.BaseAbility.IsProfessional && HasInstruction == false)
-                {
-                    ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-                    ability.AdvancedUsing[^1] += "Double";
-                }
-
-                HasInstruction = false;
-            }
-            
-            Helper.FormString2 = "";
+            attribute.Points -= 1;
+            ability.AdvancedUsing.Add(Helper.FormString2);
+            HasInstruction = false;
 
             PlayerAbilityAttributeSelection.Toggle();
         }
+        protected void onPlayerAbilityToggleOffUsingGestalt(PlayerAbility ability)
+        {
+            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
+            ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+            ability.AdvancedUsing.Add(Helper.FormString2);
+
+            if (ability.BaseAbility.IsProfessional && HasInstruction == false)
+            {
+                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+                ability.AdvancedUsing[^1] += "Double";
+            }
+
+            HasInstruction = false;
+
+            PlayerAbilityAttributeSelection.Toggle();
+        }
+
 
         protected BSModal PlayerAbilitySpendSelection { get; set; }
         protected void onPlayerAbilitySpendSelectionToggleOn(PlayerAbility ability)
@@ -1321,34 +1321,34 @@ namespace OutbreakBlazor.Pages
             ThisBaseAbility = ThisPlayerAbility.BaseAbility;
             PlayerAbilitySpendSelection.Toggle();
         }
-        protected void onPlayerAbilitySpendSelectionToggleOff(PlayerAbility ability)
+        protected void onPlayerAbilitySpendSelectionToggleOffUsingPoints(PlayerAbility ability)
         {
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
-            if (Helper.FormString2 == "points")
-            {
-                attribute.Points -= 1;
-                ability.AdvancedUsing.Add(Helper.FormString2);
-                HasInstruction = false;
-            }
-            else if (Helper.FormString2 == "gestalt")
-            {
-                ThisCharacter.GestaltLevel -= ability.Tier;
-                ability.AdvancedUsing.Add(Helper.FormString2);
-
-                if (ability.BaseAbility.IsProfessional && HasInstruction == false)
-                {
-                    ThisCharacter.GestaltLevel -= (ability.Tier);
-                    ability.AdvancedUsing[^1] += "Double";
-                }
-
-                HasInstruction = false;
-            }
-
-            Helper.FormString2 = "";
+            attribute.Points -= 1;
+            ability.AdvancedUsing.Add(Helper.FormString2);
+            HasInstruction = false;
 
             PlayerAbilitySpendSelection.Toggle();
         }
+        protected void onPlayerAbilitySpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
+        {
+            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
+            ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+            ability.AdvancedUsing.Add(Helper.FormString2);
+
+            if (ability.BaseAbility.IsProfessional && HasInstruction == false)
+            {
+                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+                ability.AdvancedUsing[^1] += "Double";
+            }
+
+            HasInstruction = false;
+
+            PlayerAbilitySpendSelection.Toggle();
+        }
+
 
         protected BSModal PlayerAbilitySingleAttributeAddSpendSelection { get; set; }
         protected void onPlayerAbilitySingleAttributeAddSpendSelectionToggleOn(PlayerAbility ability)
@@ -1357,34 +1357,34 @@ namespace OutbreakBlazor.Pages
             ThisBaseAbility = ThisPlayerAbility.BaseAbility;
             PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
         }
-        protected void onPlayerAbilitySingleAttributeAddSpendSelectionToggleOff(PlayerAbility ability)
+        protected void onPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(PlayerAbility ability)
         {
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
-            if (Helper.FormString2 == "points")
-            {
-                attribute.Points -= 1;
-                ability.AdvancedUsing.Add(Helper.FormString2);
-                HasInstruction = false;
-            }
-            else if (Helper.FormString2 == "gestalt")
-            {
-                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-                ability.AdvancedUsing.Add(Helper.FormString2);
-
-                if (ability.BaseAbility.IsProfessional && HasInstruction == false)
-                {
-                    ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-                    ability.AdvancedUsing[^1] += "Double";
-                }
-
-                HasInstruction = false;
-            }
-
-            Helper.FormString2 = "";
+            attribute.Points -= 1;
+            ability.AdvancedUsing.Add(Helper.FormString2);
+            HasInstruction = false;
 
             PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
         }
+        protected void onPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
+        {
+            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
+            ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+            ability.AdvancedUsing.Add(Helper.FormString2);
+
+            if (ability.BaseAbility.IsProfessional && HasInstruction == false)
+            {
+                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+                ability.AdvancedUsing[^1] += "Double";
+            }
+
+            HasInstruction = false;
+
+            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
+        }
+
 
         protected async Task<PlayerAbility> UpdateThisPlayerAttribute()
         {
