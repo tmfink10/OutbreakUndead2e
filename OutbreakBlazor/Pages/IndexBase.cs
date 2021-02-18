@@ -362,7 +362,6 @@ namespace OutbreakBlazor.Pages
 
                     while (rawSkillNames.Length > 0)
                     {
-                        Console.WriteLine($"RawSkillNames:{rawSkillNames}");
                         var tempString = rawSkillNames.Remove(rawSkillNames.IndexOf('%'));
                         SkillNames.Add(tempString);
                         tempString = "";
@@ -1041,6 +1040,38 @@ namespace OutbreakBlazor.Pages
                             }
                         }
                     }
+
+                    if (!string.IsNullOrWhiteSpace(skill.Specialty))
+                    {
+                        if (ability.BaseAbility.Name == "BMX")
+                        {
+                            if (skill.Specialty.ToLower() == "bicycle" || 
+                                skill.Specialty.ToLower() == "bicycle" || 
+                                skill.Specialty.ToLower() == "bike" || 
+                                skill.Specialty.ToLower() == "bikes")
+                            {
+                                totalAdvancement += ability.Tier;
+                            }
+                        }
+                        else if (ability.BaseAbility.Name == "Biker")
+                        {
+                            if (skill.Specialty.ToLower() == "motorcycle" || 
+                                skill.Specialty.ToLower() == "motorcycles" || 
+                                skill.Specialty.ToLower() == "dirt bike" || 
+                                skill.Specialty.ToLower() == "dirt bikes")
+                            {
+                                totalAdvancement += ability.Tier;
+                            }
+                        }
+                        else if (ability.BaseAbility.Name == "Training, Vehicle/Vessel")
+                        {
+                            if (skill.BaseSkill.Name == "Pilot")
+                            {
+                                totalAdvancement += ability.Tier;
+                            }
+                        }
+                    }
+                    
                 }
 
                 skill.Value = InitialValue + totalAdvancement;
@@ -1381,7 +1412,33 @@ namespace OutbreakBlazor.Pages
         {
             if (!string.IsNullOrWhiteSpace(ThisPlayerSkill.Specialty))
             {
-                var newPlayerSkill = await PlayerSkillService.CreatePlayerSkill(ThisPlayerSkill);
+                var newPlayerSkill = ThisPlayerSkill;
+                var skillName = newPlayerSkill.BaseSkill.Name;
+                var skillSpeciality = newPlayerSkill.Specialty.ToLower();
+
+                if (skillName == "Pilot")
+                {
+                    if (skillSpeciality == "motorcycle" || skillSpeciality == "motorcycles" || skillSpeciality == "dirt bike" || skillSpeciality == "dirt bikes")
+                    {
+                        if (ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == "Biker") != null)
+                        {
+                            newPlayerSkill.IsSupported = true;
+                        }
+                    }
+                    if (skillSpeciality == "bicycle" || skillSpeciality == "bicycles" || skillSpeciality == "bike" || skillSpeciality == "bikes")
+                    {
+                        if (ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == "BMX") != null)
+                        {
+                            newPlayerSkill.IsSupported = true;
+                        }
+                    }
+                    if (ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == "Training, Vehicle/Vessel") != null)
+                    {
+                        newPlayerSkill.IsSupported = true;
+                    }
+                }
+
+                newPlayerSkill = await PlayerSkillService.CreatePlayerSkill(newPlayerSkill);
 
                 ThisCharacter.SpecializedPlayerSkills.Add(newPlayerSkill);
 
@@ -1631,14 +1688,36 @@ namespace OutbreakBlazor.Pages
                     TempSpecializedSkills.Remove(skillToRemove);
                 }
             }
-            page0Labels.Add(new Label("", skillAdvancementsIndentRight, 619, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Science"), skillAdvancementsIndentRight, 635, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentRight, 651, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentRight, 667, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Science") != null)
+            {
+                for (int i = 651; i < 668; i += 16)
+                {
+                    var skillToRemove = TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Science");
+                    if (skillToRemove != null)
+                    {
+                        page0Labels.Add(new Label(skillToRemove.Advancements.ToString(), skillAdvancementsIndentRight, i, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+                        page0Labels.Add(new Label(skillToRemove.Specialty, skillAdvancementsIndentRight + 22, i - 3, 504, 100, Font.Helvetica, skillsFontSize - 1, TextAlign.Left));
+                        page0TransparencyGroup.Add(new Label(skillToRemove.Value.ToString(), skillIndentRight, i - 2, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+                        TempSpecializedSkills.Remove(skillToRemove);
+                    }
+                }
+            }
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Survival"), skillAdvancementsIndentRight, 683, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentRight, 699, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentRight, 715, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label("", skillAdvancementsIndentRight, 731, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Survival") != null)
+            {
+                for (int i = 699; i < 732; i += 16)
+                {
+                    var skillToRemove = TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Survival");
+                    if (skillToRemove != null)
+                    {
+                        page0Labels.Add(new Label(skillToRemove.Advancements.ToString(), skillAdvancementsIndentRight, i, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+                        page0Labels.Add(new Label(skillToRemove.Specialty, skillAdvancementsIndentRight + 22, i - 3, 504, 100, Font.Helvetica, skillsFontSize - 1, TextAlign.Left));
+                        page0TransparencyGroup.Add(new Label(skillToRemove.Value.ToString(), skillIndentRight, i - 2, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+                        TempSpecializedSkills.Remove(skillToRemove);
+                    }
+                }
+            }
             page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Toughness"), skillAdvancementsIndentRight, 747, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
 
             page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Hold"), skillIndentRight, 291, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
