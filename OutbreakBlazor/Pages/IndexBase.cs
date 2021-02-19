@@ -63,6 +63,7 @@ namespace OutbreakBlazor.Pages
         protected int InitialValue;
         protected int FinalValue;
         protected int Delta;
+        protected List<string> ActionsLog = new List<string>();
 
         protected override async Task OnInitializedAsync()
         {
@@ -420,11 +421,11 @@ namespace OutbreakBlazor.Pages
                     if (tempAbility.BaseAbility.UsesBaseAttributes.Count == 1)
                     {
                         tempAbility.AddedUsingBaseAttributeCode = tempAbility.BaseAbility.UsesBaseAttributes[0].Name;
-                        onPlayerAbilitySingleAttributeAddSpendSelectionToggleOn(tempAbility);
+                        OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOn(tempAbility);
                     }
                     else
                     {
-                        onPlayerAbilityToggleOn(tempAbility);
+                        OnPlayerAbilityToggleOn(tempAbility);
                     }
                 }
 
@@ -523,6 +524,7 @@ namespace OutbreakBlazor.Pages
 
             if (ability.Tier == 5)
             {
+                AddToActionsLog($"{ability.BaseAbility.ShortName} already advanced 5 times. Advancement prohibited.");
                 return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
             }
 
@@ -540,13 +542,9 @@ namespace OutbreakBlazor.Pages
                     if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
                     {
                         trainingValue.Value += 1;
+                        AddToActionsLog($"{ability.BaseAbility.ShortName} increased {trainingValue.BaseTrainingValue.Name} by 1");
                     }
                 }
-            }
-
-            if (attribute.Points < 0)
-            {
-                HighlightAttribute(attribute);
             }
 
             return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
@@ -559,6 +557,7 @@ namespace OutbreakBlazor.Pages
 
             if (ability.Tier == 1)
             {
+                AddToActionsLog($"{ability.BaseAbility.ShortName} cannot be reduced below 1. Remove ability to reduce further.");
                 return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
             }
 
@@ -567,18 +566,21 @@ namespace OutbreakBlazor.Pages
                 if (ability.AdvancedUsing[^1] == "gestalt")
                 {
                     ThisCharacter.GestaltLevel += (ability.Tier);
+                    AddToActionsLog($"+{ability.Tier} Gestalt added for reducing {ability.BaseAbility.ShortName}");
                     ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
                 }
 
                 else if (ability.AdvancedUsing[^1] == "gestaltDouble")
                 {
                     ThisCharacter.GestaltLevel += (ability.Tier) * 2;
+                    AddToActionsLog($"+{ability.Tier*2} Gestalt added for reducing {ability.BaseAbility.ShortName}");
                     ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
                 }
 
                 else if (ability.AdvancedUsing[^1] == "points" || ability.AdvancedUsing[^1] == "pointsDouble")
                 {
                     attribute.Points += 1;
+                    AddToActionsLog($"+1 point added to {ability.BaseAbility.Name} for reducing {ability.BaseAbility.ShortName}");
                     ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
                 }
 
@@ -594,6 +596,7 @@ namespace OutbreakBlazor.Pages
                         if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
                         {
                             trainingValue.Value -= 1;
+                            AddToActionsLog($"{trainingValue.BaseTrainingValue.Name} reduced by 1");
                         }
                     }
                 }
@@ -612,17 +615,24 @@ namespace OutbreakBlazor.Pages
             ThisCharacter.PlayerAbilities.Remove(ability);
             var attribute = ThisCharacter.PlayerAttributes
                 .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
+            var result = "";
+
             for (int i = ability.AdvancedUsing.Count-1; i > -1; i--)
             {
-                if (ability.AdvancedUsing[i] == "gestalt")
+                if (ability.AdvancedUsing[i] == "Gestalt")
                 {
                     if (i == 0)
                     {
                         ThisCharacter.GestaltLevel += (5 - attribute.Bonus);
+                        result = $"+{5 - attribute.Bonus} Gestalt";
+                        AddToActionsLog(result);
                     }
                     else
                     {
                         ThisCharacter.GestaltLevel += ability.Tier;
+                        result = $"+{ability.Tier} Gestalt";
+                        AddToActionsLog(result);
                     }
                 }
                 else if (ability.AdvancedUsing[i] == "gestaltDouble")
@@ -630,19 +640,28 @@ namespace OutbreakBlazor.Pages
                     if (i == 0)
                     {
                         ThisCharacter.GestaltLevel += (5 - attribute.Bonus)*2;
+                        result = $"+{(5 - attribute.Bonus)*2} Gestalt";
+                        AddToActionsLog(result);
                     }
                     else
                     {
                         ThisCharacter.GestaltLevel += ability.Tier*2;
+                        result = $"+{ability.Tier} Gestalt";
+                        AddToActionsLog(result);
                     }
                 }
                 else if (ability.AdvancedUsing[i] == "points" || ability.AdvancedUsing[i] == "pointsDouble")
                 {
                     attribute.Points += 1;
+                    result = $"+1 point to {attribute.BaseAttribute.Name}";
+                    AddToActionsLog(result);
                 }
 
                 ability.Tier -= 1;
             }
+
+            result = $"Removed {ability.BaseAbility.ShortName}";
+            AddToActionsLog(result);
 
             ability.AdvancedUsing = new List<string>();
 
@@ -951,6 +970,7 @@ namespace OutbreakBlazor.Pages
 
             if (skill.AdvancementsList.Count==5)
             {
+                AddToActionsLog($"{skill.BaseSkill.Name} already advanced 5 times. Further advancement prohibited.");
                 return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
             }
 
@@ -959,9 +979,9 @@ namespace OutbreakBlazor.Pages
                 if (skill.IsSupported)
                 {
                     var roll = RollD5("Highest");
+                    totalAdvancement += roll;
                     ThisCharacter.GestaltLevel -= 1;
                     skill.Advancements += 1;
-                    totalAdvancement += roll;
                     foreach (var ability in ThisCharacter.PlayerAbilities)
                     {
                         foreach (var playerSkill in ability.SupportsPlayerSkills)
@@ -971,20 +991,24 @@ namespace OutbreakBlazor.Pages
                                 if (ability.BaseAbility.AdvancesSkills)
                                 {
                                     totalAdvancement += ability.Tier;
+                                    AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
                                 }
                             }
                         }
                     }
                     skill.Value = InitialValue + totalAdvancement;
                     skill.AdvancementsList.Add(totalAdvancement);
+                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is supported");
                 }
                 else
                 {
                     var roll = RollD5();
+                    totalAdvancement += roll;
                     ThisCharacter.GestaltLevel -= 1;
                     skill.Advancements += 1;
-                    skill.Value = InitialValue + roll;
-                    skill.AdvancementsList.Add(roll);
+                    skill.Value = InitialValue + totalAdvancement;
+                    skill.AdvancementsList.Add(totalAdvancement);
+                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is not supported");
                 }
             }
 
@@ -993,9 +1017,9 @@ namespace OutbreakBlazor.Pages
                 if (skill.IsSpecialized)
                 {
                     var roll = RollD5("Highest");
+                    totalAdvancement += roll;
                     ThisCharacter.GestaltLevel -= 1;
                     skill.Advancements += 1;
-                    totalAdvancement += roll;
                     if (skill.IsSupported)
                     {
                         foreach (var ability in ThisCharacter.PlayerAbilities)
@@ -1007,6 +1031,7 @@ namespace OutbreakBlazor.Pages
                                     if (ability.BaseAbility.AdvancesSkills)
                                     {
                                         totalAdvancement += ability.Tier;
+                                        AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
                                     }
                                 }
                             }
@@ -1014,13 +1039,14 @@ namespace OutbreakBlazor.Pages
                     }
                     skill.Value = InitialValue + totalAdvancement;
                     skill.AdvancementsList.Add(totalAdvancement);
+                    AddToActionsLog($"{skill.BaseSkill.Name} is a specialized {skill.BaseSkill.Type} skill");
                 }
                 else if (skill.IsSupported)
                 {
                     var roll = RollD5();
+                    totalAdvancement += roll;
                     ThisCharacter.GestaltLevel -= 1;
                     skill.Advancements += 1;
-                    totalAdvancement += roll;
                     foreach (var ability in ThisCharacter.PlayerAbilities)
                     {
                         foreach (var playerSkill in ability.SupportsPlayerSkills)
@@ -1030,20 +1056,24 @@ namespace OutbreakBlazor.Pages
                                 if (ability.BaseAbility.AdvancesSkills)
                                 {
                                     totalAdvancement += ability.Tier;
+                                    AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
                                 }
                             }
                         }
                     }
                     skill.Value = InitialValue + totalAdvancement;
                     skill.AdvancementsList.Add(totalAdvancement);
+                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is supported");
                 }
                 else
                 {
                     var roll = RollD5("Lowest");
+                    totalAdvancement += roll;
                     ThisCharacter.GestaltLevel -= 1;
                     skill.Advancements += 1;
-                    skill.Value = InitialValue + roll;
-                    skill.AdvancementsList.Add(roll);
+                    skill.Value = InitialValue + totalAdvancement;
+                    skill.AdvancementsList.Add(totalAdvancement);
+                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is neither specialized nor supported");
                 }
             }
 
@@ -1053,19 +1083,22 @@ namespace OutbreakBlazor.Pages
                 if (skill.IsSpecialized && skill.IsSupported)
                 {
                     roll = RollD5();
+                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is both specialized and supported");
                 }
                 else if (skill.IsSupported)
                 {
                     roll = RollD5("Lowest");
+                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is supported");
                 }
                 else
                 {
+                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is neither specialized nor supported. Advancement is prohibited.");
                     return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
                 }
 
+                totalAdvancement += roll;
                 ThisCharacter.GestaltLevel -= 1;
                 skill.Advancements += 1;
-                totalAdvancement += roll;
 
                 foreach (var ability in ThisCharacter.PlayerAbilities)
                 {
@@ -1076,6 +1109,7 @@ namespace OutbreakBlazor.Pages
                             if (ability.BaseAbility.AdvancesSkills)
                             {
                                 totalAdvancement += ability.Tier;
+                                AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
                             }
                         }
                     }
@@ -1090,6 +1124,7 @@ namespace OutbreakBlazor.Pages
                                 skill.Specialty.ToLower() == "bikes")
                             {
                                 totalAdvancement += ability.Tier;
+                                AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
                             }
                         }
                         else if (ability.BaseAbility.Name == "Biker")
@@ -1100,6 +1135,7 @@ namespace OutbreakBlazor.Pages
                                 skill.Specialty.ToLower() == "dirt bikes")
                             {
                                 totalAdvancement += ability.Tier;
+                                AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
                             }
                         }
                         else if (ability.BaseAbility.Name == "Training, Vehicle/Vessel")
@@ -1107,10 +1143,10 @@ namespace OutbreakBlazor.Pages
                             if (skill.BaseSkill.Name == "Pilot")
                             {
                                 totalAdvancement += ability.Tier;
+                                AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
                             }
                         }
                     }
-                    
                 }
 
                 skill.Value = InitialValue + totalAdvancement;
@@ -1124,12 +1160,16 @@ namespace OutbreakBlazor.Pages
                 skill.Advancements -= 1;
                 skill.Value -= lastAdvancement;
                 skill.AdvancementsList.Remove(lastAdvancement);
+                AddToActionsLog($"{skill.BaseSkill.Name} already advanced 5 times. Further advancement prohibited.");
             }
 
             if (ThisCharacter.GestaltLevel < 0)
             {
                 HighlightGestaltValue();
             }
+
+            AddToActionsLog("Details:");
+            AddToActionsLog($"Total advancement for {skill.BaseSkill.Name} = {totalAdvancement}");
 
             return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
         }
@@ -1144,6 +1184,7 @@ namespace OutbreakBlazor.Pages
                 ThisCharacter.GestaltLevel += 1;
                 skill.Advancements -= 1;
                 skill.Value = InitialValue - lastAdvancement;
+                AddToActionsLog($"+1 Gestalt: {skill.BaseSkill.Name} value decreased by {lastAdvancement} (from {InitialValue} to {skill.Value}).");
                 skill.AdvancementsList.Remove(skill.AdvancementsList[^1]);
             }
 
@@ -1179,7 +1220,7 @@ namespace OutbreakBlazor.Pages
 
             ThisPlayerSkill = newPlayerSkill;
 
-            onSpecializePlayerSkillToggleOn(ThisPlayerSkill);
+            OnSpecializePlayerSkillToggleOn(ThisPlayerSkill);
         }
 
         protected void HandleRemovePlayerSkill(PlayerSkill skill)
@@ -1203,10 +1244,13 @@ namespace OutbreakBlazor.Pages
         {
             var rand = new Random();
             var rolls = new List<int>();
+            var roll1modified = false;
+            var roll2modified = false;
 
             var roll1 = rand.Next(1, 7);
             if (roll1 == 6)
             {
+                roll1modified = true;
                 roll1 = 5;
             }
             rolls.Add(roll1);
@@ -1214,21 +1258,55 @@ namespace OutbreakBlazor.Pages
             var roll2 = rand.Next(1, 7);
             if (roll2 == 6)
             {
+                roll2modified = true;
                 roll2 = 5;
             }
             rolls.Add(roll2);
 
             if (type == "Highest")
             {
+                var result = $"Rolling 2D6... Highest of [{roll1}, {roll2}] = {rolls.Max()}";
+                if (roll1modified || roll2modified)
+                {
+                    result += " (modified from 6)";
+                }
+                AddToActionsLog(result);
                 return rolls.Max();
             }
 
-            if (type == "Lowest")
+            else if (type == "Lowest")
             {
+                var result = $"Rolling 2D6... Lowest of [{roll1}, {roll2}] = {rolls.Min()}";
+                AddToActionsLog(result);
                 return rolls.Min();
             }
 
-            return roll1;
+            else
+            {
+                var result = $"Rolling 1D6... Result = {roll1}";
+                if (roll1modified)
+                {
+                    result += " (modified from 6)";
+                }
+                AddToActionsLog(result);
+
+                return roll1;
+            }
+            
+        }
+
+        protected void AddToActionsLog(string s)
+        {
+            ActionsLog.Reverse();
+
+            ActionsLog.Add(s);
+
+            if (ActionsLog.Count > 24)
+            {
+                ActionsLog.Remove(ActionsLog[0]);
+            }
+
+            ActionsLog.Reverse();
         }
 
         protected void SetGestalt()
@@ -1297,25 +1375,25 @@ namespace OutbreakBlazor.Pages
         }
 
         protected BSModal StrengthDescription { get; set; }
-        protected void onStrengthToggle(MouseEventArgs e)
+        protected void OnStrengthToggle(MouseEventArgs e)
         {
             StrengthDescription.Toggle();
         }
 
         protected BSModal PerceptionDescription { get; set; }
-        protected void onPerceptionToggle(MouseEventArgs e)
+        protected void OnPerceptionToggle(MouseEventArgs e)
         {
             PerceptionDescription.Toggle();
         }
 
         protected BSModal EmpathyDescription { get; set; }
-        protected void onEmpathyToggle(MouseEventArgs e)
+        protected void OnEmpathyToggle(MouseEventArgs e)
         {
             EmpathyDescription.Toggle();
         }
 
         protected BSModal WillpowerDescription { get; set; }
-        protected void onWillpowerToggle(MouseEventArgs e)
+        protected void OnWillpowerToggle(MouseEventArgs e)
         {
             WillpowerDescription.Toggle();
         }
@@ -1334,24 +1412,24 @@ namespace OutbreakBlazor.Pages
         }
 
         protected BSModal BaseAbilityDescription { get; set; }
-        protected void onBaseAbilityToggleOn(BaseAbility ability)
+        protected void OnBaseAbilityToggleOn(BaseAbility ability)
         {
             ThisBaseAbility = ability;
             BaseAbilityDescription.Toggle();
         }
-        protected void onBaseAbilityToggleOff()
+        protected void OnBaseAbilityToggleOff()
         {
             BaseAbilityDescription.Toggle();
         }
 
         protected BSModal PlayerAbilityAttributeSelection { get; set; }
-        protected void onPlayerAbilityToggleOn(PlayerAbility ability)
+        protected void OnPlayerAbilityToggleOn(PlayerAbility ability)
         {
             ThisPlayerAbility = ability;
             ThisBaseAbility = ThisPlayerAbility.BaseAbility;
             PlayerAbilityAttributeSelection.Toggle();
         }
-        protected void onPlayerAbilityToggleOffUsingPoints(PlayerAbility ability)
+        protected void OnPlayerAbilityToggleOffUsingPoints(PlayerAbility ability)
         {
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
@@ -1364,19 +1442,25 @@ namespace OutbreakBlazor.Pages
                 HighlightAttribute(attribute);
             }
 
+            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to add {ability.BaseAbility.Name}";
+            AddToActionsLog(result);
+
             PlayerAbilityAttributeSelection.Toggle();
         }
-        protected void onPlayerAbilityToggleOffUsingGestalt(PlayerAbility ability)
+        protected void OnPlayerAbilityToggleOffUsingGestalt(PlayerAbility ability)
         {
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+            var spend = 5 - attribute.Bonus;
 
-            ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+            ThisCharacter.GestaltLevel -= spend;
             ability.AdvancedUsing.Add("gestalt");
+            var result = $"Spent {spend} Gestalt";
 
             if (ability.BaseAbility.IsProfessional && HasInstruction == false)
             {
                 ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
                 ability.AdvancedUsing[^1] += "Double";
+                result += $" + {spend} Gestalt (prof. w/o instr.)";
             }
 
             HasInstruction = false;
@@ -1386,9 +1470,65 @@ namespace OutbreakBlazor.Pages
                 HighlightGestaltValue();
             }
 
+            result += $" to add {ability.BaseAbility.Name} linked to {attribute.BaseAttribute.Name}";
+            AddToActionsLog(result);
+
             PlayerAbilityAttributeSelection.Toggle();
         }
 
+        protected BSModal PlayerAbilitySingleAttributeAddSpendSelection { get; set; }
+        protected void OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOn(PlayerAbility ability)
+        {
+            ThisPlayerAbility = ability;
+            ThisBaseAbility = ThisPlayerAbility.BaseAbility;
+            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
+        }
+        protected void OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(PlayerAbility ability)
+        {
+            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
+            attribute.Points -= 1;
+            ability.AdvancedUsing.Add("points");
+            HasInstruction = false;
+
+            if (attribute.Points < 0)
+            {
+                HighlightAttribute(attribute);
+            }
+
+            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to advance {ability.BaseAbility.Name} to tier {ability.Tier}";
+            AddToActionsLog(result);
+
+            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
+        }
+        protected void OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
+        {
+            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+            var spend = 5 - attribute.Bonus;
+
+            ThisCharacter.GestaltLevel -= spend;
+            ability.AdvancedUsing.Add("gestalt");
+            var result = $"Spent {spend} Gestalt";
+
+            if (ability.BaseAbility.IsProfessional && HasInstruction == false)
+            {
+                ThisCharacter.GestaltLevel -= spend;
+                ability.AdvancedUsing[^1] += "Double";
+                result += $" + {spend} Gestalt (prof. w/o instr.)";
+            }
+
+            HasInstruction = false;
+
+            if (ThisCharacter.GestaltLevel < 0)
+            {
+                HighlightGestaltValue();
+            }
+
+            result += $" to add {ability.BaseAbility.Name} linked to {attribute.BaseAttribute.Name}";
+            AddToActionsLog(result);
+
+            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
+        }
 
         protected BSModal PlayerAbilitySpendSelection { get; set; }
         protected void onPlayerAbilitySpendSelectionToggleOn(PlayerAbility ability)
@@ -1397,7 +1537,7 @@ namespace OutbreakBlazor.Pages
             ThisBaseAbility = ThisPlayerAbility.BaseAbility;
             PlayerAbilitySpendSelection.Toggle();
         }
-        protected void onPlayerAbilitySpendSelectionToggleOffUsingPoints(PlayerAbility ability)
+        protected void OnPlayerAbilitySpendSelectionToggleOffUsingPoints(PlayerAbility ability)
         {
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
@@ -1410,11 +1550,15 @@ namespace OutbreakBlazor.Pages
                 HighlightAttribute(attribute);
             }
 
+            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to advance {ability.BaseAbility.ShortName} to tier {ability.Tier}";
+            AddToActionsLog(result);
+
             PlayerAbilitySpendSelection.Toggle();
         }
-        protected void onPlayerAbilitySpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
+        protected void OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
         {
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+            var result = $"Spent {ability.Tier} Gestalt";
 
             ThisCharacter.GestaltLevel -= ability.Tier;
             ability.AdvancedUsing.Add("gestalt");
@@ -1423,6 +1567,7 @@ namespace OutbreakBlazor.Pages
             {
                 ThisCharacter.GestaltLevel -= ability.Tier;
                 ability.AdvancedUsing[^1] += "Double";
+                result += $" + {ability.Tier} Gestalt (prof. w/o instr.)";
             }
 
             HasInstruction = false;
@@ -1431,56 +1576,12 @@ namespace OutbreakBlazor.Pages
             {
                 HighlightGestaltValue();
             }
+
+            result += $" to advance {ability.BaseAbility.Name} to tier {ability.Tier}";
+            AddToActionsLog(result);
 
             PlayerAbilitySpendSelection.Toggle();
         }
-
-
-        protected BSModal PlayerAbilitySingleAttributeAddSpendSelection { get; set; }
-        protected void onPlayerAbilitySingleAttributeAddSpendSelectionToggleOn(PlayerAbility ability)
-        {
-            ThisPlayerAbility = ability;
-            ThisBaseAbility = ThisPlayerAbility.BaseAbility;
-            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
-        }
-        protected void onPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(PlayerAbility ability)
-        {
-            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
-
-            attribute.Points -= 1;
-            ability.AdvancedUsing.Add("points");
-            HasInstruction = false;
-
-            if (attribute.Points < 0)
-            {
-                HighlightAttribute(attribute);
-            }
-
-            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
-        }
-        protected void onPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
-        {
-            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
-
-            ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-            ability.AdvancedUsing.Add("gestalt");
-
-            if (ability.BaseAbility.IsProfessional && HasInstruction == false)
-            {
-                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-                ability.AdvancedUsing[^1] += "Double";
-            }
-
-            HasInstruction = false;
-
-            if (ThisCharacter.GestaltLevel < 0)
-            {
-                HighlightGestaltValue();
-            }
-
-            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
-        }
-
 
         protected void HighlightAttribute(PlayerAttribute attribute)
         {
@@ -1502,6 +1603,8 @@ namespace OutbreakBlazor.Pages
             {
                 HighlightWillpower = "background-color: #FFFF00";
             }
+
+            AddToActionsLog($"{attributeName} POINTS EXCEEDED");
         }
         protected void ClearHighlightAttribute(PlayerAttribute attribute)
         {
@@ -1540,23 +1643,23 @@ namespace OutbreakBlazor.Pages
         }
 
         protected BSModal BaseSkillDescription { get; set; }
-        protected void onBaseSkillToggleOn(BaseSkill skill)
+        protected void OnBaseSkillToggleOn(BaseSkill skill)
         {
             ThisBaseSkill = skill;
             BaseSkillDescription.Toggle();
         }
-        protected void onBaseSkillToggleOff()
+        protected void OnBaseSkillToggleOff()
         {
             BaseSkillDescription.Toggle();
         }
 
         protected BSModal SpecializePlayerSkill { get; set; }
-        protected void onSpecializePlayerSkillToggleOn(PlayerSkill skill)
+        protected void OnSpecializePlayerSkillToggleOn(PlayerSkill skill)
         {
             ThisPlayerSkill = skill;
             SpecializePlayerSkill.Toggle();
         }
-        protected async Task onSpecializePlayerSkillToggleOff()
+        protected async Task OnSpecializePlayerSkillToggleOff()
         {
             if (!string.IsNullOrWhiteSpace(ThisPlayerSkill.Specialty))
             {
@@ -1605,7 +1708,7 @@ namespace OutbreakBlazor.Pages
             return values.Split(',');
         }
 
-        protected string getAttributeValueByBaseAttributeName(string baseAttributeName)
+        protected string GetAttributeValueByBaseAttributeName(string baseAttributeName)
         {
             var playerAttribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == baseAttributeName);
             if (playerAttribute == null)
@@ -1616,7 +1719,7 @@ namespace OutbreakBlazor.Pages
             return playerAttribute.Value.ToString();
         }
 
-        protected string getPlayerSkillAdvancementsByBaseSkillName(string baseSkillName, bool specialized = false)
+        protected string GetPlayerSkillAdvancementsByBaseSkillName(string baseSkillName, bool specialized = false)
         {
             PlayerSkill skill;
 
@@ -1637,7 +1740,7 @@ namespace OutbreakBlazor.Pages
             return skill.Advancements.ToString();
         }
 
-        protected string getPlayerSkillValueByBaseSkillName(string baseSkillName, bool specialized = false)
+        protected string GetPlayerSkillValueByBaseSkillName(string baseSkillName, bool specialized = false)
         {
             PlayerSkill skill;
 
@@ -1658,7 +1761,7 @@ namespace OutbreakBlazor.Pages
             return skill.Value.ToString();
         }
 
-        protected string getPlayerSkillSpecialtyByBaseSkillName(string baseSkillName, bool specialized = false)
+        protected string GetPlayerSkillSpecialtyByBaseSkillName(string baseSkillName, bool specialized = false)
         {
             PlayerSkill skill;
 
@@ -1679,7 +1782,7 @@ namespace OutbreakBlazor.Pages
             return skill.Notes.ToString();
         }
 
-        protected string getPlayerTrainingValueValueByBaseTrainingValueName(string baseTrainingValueName)
+        protected string GetPlayerTrainingValueValueByBaseTrainingValueName(string baseTrainingValueName)
         {
             var playerTrainingValue = ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == baseTrainingValueName);
 
@@ -1725,38 +1828,38 @@ namespace OutbreakBlazor.Pages
 
             page0Labels.Add(new Label(ThisCharacter.FullName, 100, 30, 504, 100, Font.Helvetica, headerFontSize, TextAlign.Left));
 
-            page0TransparencyGroup.Add(new Label(getAttributeValueByBaseAttributeName("Strength").Substring(0, 1), 70, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getAttributeValueByBaseAttributeName("Strength").Substring(1, 1), 94, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getAttributeValueByBaseAttributeName("Perception").Substring(0, 1), 128, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getAttributeValueByBaseAttributeName("Perception").Substring(1, 1), 152, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getAttributeValueByBaseAttributeName("Empathy").Substring(0, 1), 187, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getAttributeValueByBaseAttributeName("Empathy").Substring(1, 1), 211, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getAttributeValueByBaseAttributeName("Willpower").Substring(0, 1), 245, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getAttributeValueByBaseAttributeName("Willpower").Substring(1, 1), 269, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetAttributeValueByBaseAttributeName("Strength").Substring(0, 1), 70, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetAttributeValueByBaseAttributeName("Strength").Substring(1, 1), 94, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetAttributeValueByBaseAttributeName("Perception").Substring(0, 1), 128, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetAttributeValueByBaseAttributeName("Perception").Substring(1, 1), 152, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetAttributeValueByBaseAttributeName("Empathy").Substring(0, 1), 187, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetAttributeValueByBaseAttributeName("Empathy").Substring(1, 1), 211, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetAttributeValueByBaseAttributeName("Willpower").Substring(0, 1), 245, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetAttributeValueByBaseAttributeName("Willpower").Substring(1, 1), 269, 175, 504, 100, Font.Helvetica, spewFontSize, TextAlign.Left));
 
             page0TransparencyGroup.Add(new Label(ThisCharacter.SurvivalPoints.ToString(), 104, 224, 504, 100, Font.Helvetica, resourcesFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(ThisCharacter.GestaltLevel.ToString(), 193, 224, 504, 100, Font.Helvetica, resourcesFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(ThisCharacter.CompetencePoints.ToString(), 277, 224, 504, 100, Font.Helvetica, resourcesFontSize, TextAlign.Left));
 
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Balance"), skillAdvancementsIndentLeft, 293, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Brawl"), skillAdvancementsIndentLeft, 309, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Climb"), skillAdvancementsIndentLeft, 325, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Composure"), skillAdvancementsIndentLeft, 341, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Dodge"), skillAdvancementsIndentLeft, 357, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Endurance"), skillAdvancementsIndentLeft, 373, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Expression"), skillAdvancementsIndentLeft, 389, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Grapple"), skillAdvancementsIndentLeft, 405, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Bow/Crossbow"), skillAdvancementsIndentLeft, 441, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Calm Other"), skillAdvancementsIndentLeft, 457, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Diplomacy"), skillAdvancementsIndentLeft, 473, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Barter/Bribe>"), skillAdvancementsIndentLeft, 489, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Command>"), skillAdvancementsIndentLeft, 505, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Determine Motives>"), skillAdvancementsIndentLeft, 521, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Intimidate>"), skillAdvancementsIndentLeft, 537, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Persuade>"), skillAdvancementsIndentLeft, 553, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Digital Systems"), skillAdvancementsIndentLeft, 569, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Advanced Medicine"), skillAdvancementsIndentLeft, 603, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Craft/Construct/Engineer"), skillAdvancementsIndentLeft, 619, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Balance"), skillAdvancementsIndentLeft, 293, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Brawl"), skillAdvancementsIndentLeft, 309, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Climb"), skillAdvancementsIndentLeft, 325, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Composure"), skillAdvancementsIndentLeft, 341, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Dodge"), skillAdvancementsIndentLeft, 357, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Endurance"), skillAdvancementsIndentLeft, 373, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Expression"), skillAdvancementsIndentLeft, 389, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Grapple"), skillAdvancementsIndentLeft, 405, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Bow/Crossbow"), skillAdvancementsIndentLeft, 441, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Calm Other"), skillAdvancementsIndentLeft, 457, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Diplomacy"), skillAdvancementsIndentLeft, 473, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Barter/Bribe>"), skillAdvancementsIndentLeft, 489, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Command>"), skillAdvancementsIndentLeft, 505, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Determine Motives>"), skillAdvancementsIndentLeft, 521, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Intimidate>"), skillAdvancementsIndentLeft, 537, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Diplomacy <Persuade>"), skillAdvancementsIndentLeft, 553, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Digital Systems"), skillAdvancementsIndentLeft, 569, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Advanced Medicine"), skillAdvancementsIndentLeft, 603, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Craft/Construct/Engineer"), skillAdvancementsIndentLeft, 619, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Craft/Construct/Engineer") != null)
             {
                 for (int i = 635; i < 684; i += 16)
@@ -1771,8 +1874,8 @@ namespace OutbreakBlazor.Pages
                     }
                 }
             }
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Martial Arts"), skillAdvancementsIndentLeft, 699, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Pilot"), skillAdvancementsIndentLeft, 715, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Martial Arts"), skillAdvancementsIndentLeft, 699, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Pilot"), skillAdvancementsIndentLeft, 715, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot") != null)
             {
                 for (int i = 731; i < 748; i += 16)
@@ -1787,46 +1890,46 @@ namespace OutbreakBlazor.Pages
                     }
                 }
             }
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Balance"), skillIndentLeft, 291, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Brawl"), skillIndentLeft, 307, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Climb"), skillIndentLeft, 323, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Composure"), skillIndentLeft, 339, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Dodge"), skillIndentLeft, 355, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Endurance"), skillIndentLeft, 371, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Expression"), skillIndentLeft, 387, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Grapple"), skillIndentLeft, 403, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Bow/Crossbow"), skillIndentLeft, 439, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Calm Other"), skillIndentLeft, 455, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Balance"), skillIndentLeft, 291, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Brawl"), skillIndentLeft, 307, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Climb"), skillIndentLeft, 323, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Composure"), skillIndentLeft, 339, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Dodge"), skillIndentLeft, 355, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Endurance"), skillIndentLeft, 371, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Expression"), skillIndentLeft, 387, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Grapple"), skillIndentLeft, 403, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Bow/Crossbow"), skillIndentLeft, 439, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Calm Other"), skillIndentLeft, 455, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label("", skillIndentLeft, 471, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Diplomacy <Barter/Bribe>"), skillIndentLeft, 487, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Diplomacy <Command>"), skillIndentLeft, 503, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Diplomacy <Determine Motives>"), skillIndentLeft, 519, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Diplomacy <Intimidate>"), skillIndentLeft, 535, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Diplomacy <Persuade>"), skillIndentLeft, 550, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Digital Systems"), skillIndentLeft, 566, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Advanced Medicine"), skillIndentLeft, 601, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Craft/Construct/Engineer"), skillIndentLeft, 617, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Martial Arts"), skillIndentLeft, 697, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Pilot"), skillIndentLeft, 713, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Diplomacy <Barter/Bribe>"), skillIndentLeft, 487, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Diplomacy <Command>"), skillIndentLeft, 503, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Diplomacy <Determine Motives>"), skillIndentLeft, 519, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Diplomacy <Intimidate>"), skillIndentLeft, 535, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Diplomacy <Persuade>"), skillIndentLeft, 550, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Digital Systems"), skillIndentLeft, 566, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Advanced Medicine"), skillIndentLeft, 601, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Craft/Construct/Engineer"), skillIndentLeft, 617, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Martial Arts"), skillIndentLeft, 697, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Pilot"), skillIndentLeft, 713, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
 
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Hold"), skillAdvancementsIndentRight, 293, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Jump/Leap"), skillAdvancementsIndentRight, 309, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Lift/Pull"), skillAdvancementsIndentRight, 325, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Resist Pain"), skillAdvancementsIndentRight, 341, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Search"), skillAdvancementsIndentRight, 357, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Spot/Listen"), skillAdvancementsIndentRight, 373, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Stealth"), skillAdvancementsIndentRight, 389, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Hold"), skillAdvancementsIndentRight, 293, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Jump/Leap"), skillAdvancementsIndentRight, 309, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Lift/Pull"), skillAdvancementsIndentRight, 325, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Resist Pain"), skillAdvancementsIndentRight, 341, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Search"), skillAdvancementsIndentRight, 357, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Spot/Listen"), skillAdvancementsIndentRight, 373, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Stealth"), skillAdvancementsIndentRight, 389, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             page0Labels.Add(new Label("", skillAdvancementsIndentRight, 405, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Firearms <Long Gun>"), skillAdvancementsIndentRight, 441, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Firearms <Pistol>"), skillAdvancementsIndentRight, 457, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("First Aid"), skillAdvancementsIndentRight, 473, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Melee Attack <Bludgeoning>"), skillAdvancementsIndentRight, 489, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Melee Attack <Piercing>"), skillAdvancementsIndentRight, 505, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Melee Attack <Slashing>"), skillAdvancementsIndentRight, 521, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Navigation"), skillAdvancementsIndentRight, 537, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Swim"), skillAdvancementsIndentRight, 553, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Throw"), skillAdvancementsIndentRight, 569, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Ride"), skillAdvancementsIndentRight, 603, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Firearms <Long Gun>"), skillAdvancementsIndentRight, 441, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Firearms <Pistol>"), skillAdvancementsIndentRight, 457, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("First Aid"), skillAdvancementsIndentRight, 473, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Melee Attack <Bludgeoning>"), skillAdvancementsIndentRight, 489, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Melee Attack <Piercing>"), skillAdvancementsIndentRight, 505, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Melee Attack <Slashing>"), skillAdvancementsIndentRight, 521, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Navigation"), skillAdvancementsIndentRight, 537, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Swim"), skillAdvancementsIndentRight, 553, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Throw"), skillAdvancementsIndentRight, 569, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Ride"), skillAdvancementsIndentRight, 603, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Ride") != null)
             {
                 var skillToRemove = TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Ride");
@@ -1838,7 +1941,7 @@ namespace OutbreakBlazor.Pages
                     TempSpecializedSkills.Remove(skillToRemove);
                 }
             }
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Science"), skillAdvancementsIndentRight, 635, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Science"), skillAdvancementsIndentRight, 635, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Science") != null)
             {
                 for (int i = 651; i < 668; i += 16)
@@ -1853,7 +1956,7 @@ namespace OutbreakBlazor.Pages
                     }
                 }
             }
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Survival"), skillAdvancementsIndentRight, 683, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Survival"), skillAdvancementsIndentRight, 683, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
             if (TempSpecializedSkills.FirstOrDefault(s => s.BaseSkill.Name == "Survival") != null)
             {
                 for (int i = 699; i < 732; i += 16)
@@ -1868,63 +1971,63 @@ namespace OutbreakBlazor.Pages
                     }
                 }
             }
-            page0Labels.Add(new Label(getPlayerSkillAdvancementsByBaseSkillName("Toughness"), skillAdvancementsIndentRight, 747, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
+            page0Labels.Add(new Label(GetPlayerSkillAdvancementsByBaseSkillName("Toughness"), skillAdvancementsIndentRight, 747, 504, 100, Font.Helvetica, skillsAdvancementsSize, TextAlign.Left));
 
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Hold"), skillIndentRight, 291, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Jump/Leap"), skillIndentRight, 307, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Lift/Pull"), skillIndentRight, 323, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Resist Pain"), skillIndentRight, 339, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Search"), skillIndentRight, 355, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Spot/Listen"), skillIndentRight, 371, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Stealth"), skillIndentRight, 387, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Hold"), skillIndentRight, 291, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Jump/Leap"), skillIndentRight, 307, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Lift/Pull"), skillIndentRight, 323, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Resist Pain"), skillIndentRight, 339, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Search"), skillIndentRight, 355, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Spot/Listen"), skillIndentRight, 371, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Stealth"), skillIndentRight, 387, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label("", skillIndentRight, 403, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Firearms <Long Gun>"), skillIndentRight, 439, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Firearms <Pistol>"), skillIndentRight, 455, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("First Aid"), skillIndentRight, 471, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Melee Attack <Bludgeoning>"), skillIndentRight, 487, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Melee Attack <Piercing>"), skillIndentRight, 503, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Melee Attack <Slashing>"), skillIndentRight, 519, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Navigation"), skillIndentRight, 535, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Swim"), skillIndentRight, 550, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Throw"), skillIndentRight, 566, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Ride"), skillIndentRight, 601, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Firearms <Long Gun>"), skillIndentRight, 439, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Firearms <Pistol>"), skillIndentRight, 455, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("First Aid"), skillIndentRight, 471, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Melee Attack <Bludgeoning>"), skillIndentRight, 487, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Melee Attack <Piercing>"), skillIndentRight, 503, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Melee Attack <Slashing>"), skillIndentRight, 519, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Navigation"), skillIndentRight, 535, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Swim"), skillIndentRight, 550, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Throw"), skillIndentRight, 566, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Ride"), skillIndentRight, 601, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label("", skillIndentRight, 617, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Science"), skillIndentRight, 633, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Science"), skillIndentRight, 633, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label("", skillIndentRight, 649, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label("", skillIndentRight, 665, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Survival"), skillIndentRight, 681, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Survival"), skillIndentRight, 681, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label("", skillIndentRight, 697, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label("", skillIndentRight, 713, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label("", skillIndentRight, 729, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerSkillValueByBaseSkillName("Toughness"), skillIndentRight, 745, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerSkillValueByBaseSkillName("Toughness"), skillIndentRight, 745, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
 
             page0TransparencyGroup.Add(new Label(ThisCharacter.DamageThreshold.ToString(), 520, 132, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
             page0TransparencyGroup.Add(new Label(ThisCharacter.Morale.ToString(), 445, 313, 504, 100, Font.Helvetica, skillsFontSize, TextAlign.Left));
 
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Archery Gear"), trainingValueIndentTopLeft, 450, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Bludgeon"), trainingValueIndentTopLeft, 490, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Piercing"), trainingValueIndentTopLeft, 531, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Slashing"), trainingValueIndentTopLeft, 571, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Archery Gear"), trainingValueIndentTopLeft, 450, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Bludgeon"), trainingValueIndentTopLeft, 490, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Piercing"), trainingValueIndentTopLeft, 531, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Slashing"), trainingValueIndentTopLeft, 571, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
 
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Long Gun"), trainingValueIndentTopRight, 450, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Pistol"), trainingValueIndentTopRight, 490, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Throwing"), trainingValueIndentTopRight, 531, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Martial Arts"), trainingValueIndentTopRight, 571, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Long Gun"), trainingValueIndentTopRight, 450, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Pistol"), trainingValueIndentTopRight, 490, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Throwing"), trainingValueIndentTopRight, 531, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Martial Arts"), trainingValueIndentTopRight, 571, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
 
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Athletic Gear"), trainingValueIndentBottomLeft, 614, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Climbing Gear"), trainingValueIndentBottomLeft, 655, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Command Apparatus"), trainingValueIndentBottomLeft, 695, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Firefighting"), trainingValueIndentBottomLeft, 735, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Athletic Gear"), trainingValueIndentBottomLeft, 614, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Climbing Gear"), trainingValueIndentBottomLeft, 655, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Command Apparatus"), trainingValueIndentBottomLeft, 695, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Firefighting"), trainingValueIndentBottomLeft, 735, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
 
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("First Aid Kit"), trainingValueIndentBottomMiddle, 614, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Medical Gear"), trainingValueIndentBottomMiddle, 655, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Reconnaissance Gear"), trainingValueIndentBottomMiddle, 695, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Survival Kit"), trainingValueIndentBottomMiddle, 735, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("First Aid Kit"), trainingValueIndentBottomMiddle, 614, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Medical Gear"), trainingValueIndentBottomMiddle, 655, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Reconnaissance Gear"), trainingValueIndentBottomMiddle, 695, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Survival Kit"), trainingValueIndentBottomMiddle, 735, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
 
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Swimming/Diving"), trainingValueIndentBottomRight, 614, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Tools"), trainingValueIndentBottomRight, 655, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Value"), trainingValueIndentBottomRight, 695, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
-            page0TransparencyGroup.Add(new Label(getPlayerTrainingValueValueByBaseTrainingValueName("Vehicles"), trainingValueIndentBottomRight, 735, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Swimming/Diving"), trainingValueIndentBottomRight, 614, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Tools"), trainingValueIndentBottomRight, 655, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Value"), trainingValueIndentBottomRight, 695, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
+            page0TransparencyGroup.Add(new Label(GetPlayerTrainingValueValueByBaseTrainingValueName("Vehicles"), trainingValueIndentBottomRight, 735, 504, 100, Font.Helvetica, trainingValueFontSize, TextAlign.Left));
 
             if (ThisCharacter.PlayerAbilities != null)
             {

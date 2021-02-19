@@ -58,12 +58,17 @@ else
                 <BSButton Size="Size.Large" @onclick="ToggleCharacterSheetModal">Generate Character</BSButton>
             </div>
         }
-        <h2 align="center">Resources</h2><br /><br />
-        <h4 style="@HighlightStrength">Strength: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points</h4><br />
-        <h4 style="@HighlightPerception">Perception: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points</h4><br />
-        <h4 style="@HighlightEmpathy">Empathy: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points</h4><br />
-        <h4 style="@HighlightWillpower">Willpower: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points</h4><br /><br />
-        <h4 style ="@HighlightGestalt">Gestalt: @ThisCharacter.GestaltLevel</h4>
+        <h2 align="center">Resources</h2><br />
+        <h3 style="@HighlightStrength">Strength: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points</h3>
+        <h3 style="@HighlightPerception">Perception: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points</h3>
+        <h3 style="@HighlightEmpathy">Empathy: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points</h3>
+        <h3 style="@HighlightWillpower">Willpower: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points</h3>
+        <h3 style ="@HighlightGestalt">Gestalt: @ThisCharacter.GestaltLevel</h3><br />
+        <h2 align="center">Log</h2>
+        @foreach(var action in ActionsLog)
+        {
+            <span>@action</span><br />
+        }
 
     </div>
 
@@ -91,7 +96,7 @@ else
                 <BSCol>
                     <BSLabel For="characterStrength" 
                              style="@HighlightStrength" 
-                             @onclick="@onStrengthToggle">Strength    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points)</BSLabel>
+                             @onclick="@OnStrengthToggle">Strength    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points)</BSLabel>
                     <BSBasicInput Id="characterStrength"
                                   PlaceHolder="@StrengthService.Value"
                                   InputType="InputType.Number"
@@ -102,7 +107,7 @@ else
                 <BSCol>
                     <BSLabel For="characterPerception" 
                              style="@HighlightPerception"
-                             @onclick="@onPerceptionToggle">Perception    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points)</BSLabel>
+                             @onclick="@OnPerceptionToggle">Perception    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points)</BSLabel>
                     <BSBasicInput Id="characterPerception"
                                   PlaceHolder="@PerceptionService.Value"
                                   InputType="InputType.Number"
@@ -113,7 +118,7 @@ else
                 <BSCol>
                     <BSLabel For="characterEmpathy" 
                              style="@HighlightEmpathy"
-                             @onclick="@onEmpathyToggle">Empathy    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points)</BSLabel>
+                             @onclick="@OnEmpathyToggle">Empathy    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points)</BSLabel>
                     <BSBasicInput Id="characterEmpathy"
                                   PlaceHolder="@EmpathyService.Value"
                                   InputType="InputType.Number"
@@ -124,7 +129,7 @@ else
                 <BSCol>
                     <BSLabel For="characterWillpower" 
                              style="@HighlightWillpower"
-                             @onclick="@onWillpowerToggle">Willpower    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points)</BSLabel>
+                             @onclick="@OnWillpowerToggle">Willpower    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points)</BSLabel>
                     <BSBasicInput Id="characterWillpower"
                                   PlaceHolder="@WillpowerService.Value"
                                   InputType="InputType.Number"
@@ -185,7 +190,7 @@ else
                           style="margin-right: 20px;">Add</BSButton>
                 <BSButton Id="baseAbilityDetails"
                           ButtonType="ButtonType.Button"
-                          OnClick="(() => onBaseAbilityToggleOn(BaseAbilities.FirstOrDefault(a => a.Id == Int32.Parse(Helper.FormString))))"
+                          OnClick="(() => OnBaseAbilityToggleOn(BaseAbilities.FirstOrDefault(a => a.Id == Int32.Parse(Helper.FormString))))"
                           IsDisabled="string.IsNullOrWhiteSpace(Helper.FormString)">Description</BSButton>
             </BSFormGroup>
         </BSForm>
@@ -206,7 +211,7 @@ else
                         <tbody>
                             <tr>
                                 <th scope="row" style="width: 30%; font-size: 18px; padding: 15px 0;"
-                                    @onclick="@(() => onBaseAbilityToggleOn(ability.BaseAbility))">@ability.BaseAbility.ShortName (@ability.AddedUsingBaseAttributeCode)</th>
+                                    @onclick="@(() => OnBaseAbilityToggleOn(ability.BaseAbility))">@ability.BaseAbility.ShortName (@ability.AddedUsingBaseAttributeCode)</th>
                                 <td>
                                     <BSButton Color="Color.Danger" @onclick="(()=>HandleDecreasePlayerAbility(ability))"> -</BSButton>
                                     <BSInput InputType="InputType.Number"
@@ -249,7 +254,7 @@ else
                         <BSForm IsInline="true" Model="skill">
                             <BSCard Alignment="Alignment.Center">
                                 <BSCard CardType="CardType.Header">
-                                    <BSCard CardType="CardType.Title" @onclick="(() => onBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</BSCard>
+                                    <BSCard CardType="CardType.Title" @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</BSCard>
                                     <BSCard CardType="CardType.Title">@skill.Notes</BSCard>
                                 </BSCard>
                                 <BSCard CardType="CardType.Body">
@@ -287,7 +292,7 @@ else
                             <BSForm IsInline="true" Model="skill">
                                 <BSCard Alignment="Alignment.Center">
                                     <BSCard CardType="CardType.Header">
-                                        <BSCard CardType="CardType.Title" @onclick="(() => onBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</BSCard>
+                                        <BSCard CardType="CardType.Title" @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</BSCard>
                                         <BSCard CardType="CardType.Title">@skill.Specialty</BSCard>
                                     </BSCard>
                                     <BSCard CardType="CardType.Body">
@@ -321,9 +326,6 @@ else
                         <BSCard CardType="CardType.Body" Class="text-lg-center">@value.Value</BSCard>
                     </BSCard>
                 }
-            </div>
-            <div class="text-centered col-md-8">
-                <BSButton style="width: 45%; margin-bottom: 10px;" @onclick="ToggleCharacterSheetModal">Generate Character</BSButton>
             </div>
         }
     }
@@ -383,52 +385,52 @@ else
     </BSModal>
 
     <BSModal @ref="StrengthDescription" IsCentered="true">
-        <BSModalHeader OnClick="@onStrengthToggle">Strength</BSModalHeader>
+        <BSModalHeader OnClick="@OnStrengthToggle">Strength</BSModalHeader>
         <BSModalBody>
             <p>@((MarkupString) StrengthService.BaseAttribute.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onStrengthToggle">Ok</BSButton>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnStrengthToggle">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 
     <BSModal @ref="PerceptionDescription" IsCentered="true">
-        <BSModalHeader OnClick="@onPerceptionToggle">Perception</BSModalHeader>
+        <BSModalHeader OnClick="@OnPerceptionToggle">Perception</BSModalHeader>
         <BSModalBody>
             <p>@((MarkupString) PerceptionService.BaseAttribute.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onPerceptionToggle">Ok</BSButton>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnPerceptionToggle">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 
     <BSModal @ref="EmpathyDescription" IsCentered="true">
-        <BSModalHeader OnClick="@onEmpathyToggle">Empathy</BSModalHeader>
+        <BSModalHeader OnClick="@OnEmpathyToggle">Empathy</BSModalHeader>
         <BSModalBody>
             <p>@((MarkupString) EmpathyService.BaseAttribute.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onEmpathyToggle">Ok</BSButton>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnEmpathyToggle">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 
     <BSModal @ref="WillpowerDescription" IsCentered="true">
-        <BSModalHeader OnClick="@onWillpowerToggle">Willpower</BSModalHeader>
+        <BSModalHeader OnClick="@OnWillpowerToggle">Willpower</BSModalHeader>
         <BSModalBody>
             <p>@((MarkupString) WillpowerService.BaseAttribute.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onWillpowerToggle">Ok</BSButton>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnWillpowerToggle">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 
     <BSModal @ref="BaseAbilityDescription" IsCentered="true">
-        <BSModalHeader OnClick="@onBaseAbilityToggleOff">@ThisBaseAbility.Name</BSModalHeader>
+        <BSModalHeader OnClick="@OnBaseAbilityToggleOff">@ThisBaseAbility.Name</BSModalHeader>
         <BSModalBody>
             <p>@((MarkupString) ThisBaseAbility.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@onBaseAbilityToggleOff">Ok</BSButton>
+            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnBaseAbilityToggleOff">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 
@@ -455,11 +457,11 @@ else
                 }
                 <br />
                 <BSButton ButtonType="ButtonType.Submit"
-                          @onclick="(() => onPlayerAbilityToggleOffUsingGestalt(ThisPlayerAbility))"
+                          @onclick="(() => OnPlayerAbilityToggleOffUsingGestalt(ThisPlayerAbility))"
                           IsDisabled="string.IsNullOrWhiteSpace(ThisPlayerAbility.AddedUsingBaseAttributeCode)"
                           style="width: 40%">Gestalt Levels</BSButton>
                 <BSButton ButtonType="ButtonType.Submit"
-                          @onclick="(() => onPlayerAbilityToggleOffUsingPoints(ThisPlayerAbility))"
+                          @onclick="(() => OnPlayerAbilityToggleOffUsingPoints(ThisPlayerAbility))"
                           IsDisabled="string.IsNullOrWhiteSpace(ThisPlayerAbility.AddedUsingBaseAttributeCode)"
                           style="width: 40%">Attribute Points</BSButton>
             </BSModalBody>
@@ -478,8 +480,8 @@ else
                     </BSFormGroup>
                 }
                 <br />
-                <BSButton ButtonType="ButtonType.Submit" @onclick="(()=>onPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
-                <BSButton ButtonType="ButtonType.Submit" @onclick="(()=>onPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
+                <BSButton ButtonType="ButtonType.Submit" @onclick="(()=>OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
+                <BSButton ButtonType="ButtonType.Submit" @onclick="(()=>OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
             </BSModalBody>
         </BSForm>
     </BSModal>
@@ -496,31 +498,31 @@ else
                     </BSFormGroup>
                 }
                 <br />
-                <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
-                <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>onPlayerAbilitySpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
+                <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
+                <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>OnPlayerAbilitySpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
             </BSModalBody>
         </EditForm>
     </BSModal>
 
     <BSModal @ref="BaseSkillDescription" IsCentered="true">
-        <BSModalHeader OnClick="@onBaseSkillToggleOff">@ThisBaseSkill.Name</BSModalHeader>
+        <BSModalHeader OnClick="@OnBaseSkillToggleOff">@ThisBaseSkill.Name</BSModalHeader>
         <BSModalBody>
             <p>@((MarkupString) ThisBaseSkill.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="Color.Primary" OnClick="@onBaseSkillToggleOff">Ok</BSButton>
+            <BSButton Color="Color.Primary" OnClick="@OnBaseSkillToggleOff">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 
     <BSModal @ref="SpecializePlayerSkill" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
         <BSModalHeader>Specialize @ThisPlayerSkill.BaseSkill.Name</BSModalHeader>
         <BSModalBody>
-            <BSForm Model="ThisPlayerSkill" OnValidSubmit="(onSpecializePlayerSkillToggleOff)">
+            <BSForm Model="ThisPlayerSkill" OnValidSubmit="(OnSpecializePlayerSkillToggleOff)">
                 <BSInput InputType="InputType.Text" @bind-Value="ThisPlayerSkill.Specialty">Specialty:</BSInput>
             </BSForm>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton ButtonType="ButtonType.Submit" OnClick="(onSpecializePlayerSkillToggleOff)">Ok</BSButton>
+            <BSButton ButtonType="ButtonType.Submit" OnClick="(OnSpecializePlayerSkillToggleOff)">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 }
