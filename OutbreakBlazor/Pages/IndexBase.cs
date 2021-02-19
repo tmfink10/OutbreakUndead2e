@@ -50,9 +50,15 @@ namespace OutbreakBlazor.Pages
 
         protected NavigationManager Navigator;
 
-        protected bool _createNew;
-        protected bool _addAbilities;
-        protected bool _addSkills;
+        protected string CollapseRightSidebar = "block";
+        protected string HighlightStrength = "";
+        protected string HighlightPerception = "";
+        protected string HighlightEmpathy = "";
+        protected string HighlightWillpower = "";
+        protected string HighlightGestalt = "";
+        protected bool CreateNew;
+        protected bool AddAbilities;
+        protected bool AddSkills;
         protected bool HasInstruction;
         protected int InitialValue;
         protected int FinalValue;
@@ -89,7 +95,6 @@ namespace OutbreakBlazor.Pages
         public class HelperClass
         {
             public string FormString;
-            public string FormString2;
         }
 
         public PlayerCharacter ThisCharacter = new PlayerCharacter();
@@ -113,7 +118,7 @@ namespace OutbreakBlazor.Pages
 
         protected async Task HandleNewCharacterClick()
         {
-            _createNew = !_createNew;
+            CreateNew = !CreateNew;
 
             ThisCharacter.Age = 30;
 
@@ -224,7 +229,7 @@ namespace OutbreakBlazor.Pages
             ThisCharacter.Morale = empathy.Bonus + willpower.Bonus;
             ThisCharacter.CargoCapacity = strength.Bonus;
 
-            _addAbilities = true;
+            AddAbilities = true;
 
             return await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
         }
@@ -335,6 +340,15 @@ namespace OutbreakBlazor.Pages
                         skill.Value += 1;
                     }
                 }
+            }
+
+            if (attribute.Points < 0)
+            {
+                HighlightAttribute(attribute);
+            }
+            else if (attribute.Points >= 0)
+            {
+                ClearHighlightAttribute(attribute);
             }
 
             InitialValue = attribute.Value;
@@ -504,6 +518,9 @@ namespace OutbreakBlazor.Pages
 
         protected async Task<PlayerAbility> HandleIncreasePlayerAbility(PlayerAbility ability)
         {
+            var attribute = ThisCharacter.PlayerAttributes
+                .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
             if (ability.Tier == 5)
             {
                 return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
@@ -527,11 +544,19 @@ namespace OutbreakBlazor.Pages
                 }
             }
 
+            if (attribute.Points < 0)
+            {
+                HighlightAttribute(attribute);
+            }
+
             return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
         }
 
         protected async Task<PlayerAbility> HandleDecreasePlayerAbility(PlayerAbility ability)
         {
+            var attribute = ThisCharacter.PlayerAttributes
+                .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+
             if (ability.Tier == 1)
             {
                 return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
@@ -553,8 +578,7 @@ namespace OutbreakBlazor.Pages
 
                 else if (ability.AdvancedUsing[^1] == "points" || ability.AdvancedUsing[^1] == "pointsDouble")
                 {
-                    ThisCharacter.PlayerAttributes.FirstOrDefault(a =>
-                        a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode).Points += 1;
+                    attribute.Points += 1;
                     ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
                 }
 
@@ -573,6 +597,11 @@ namespace OutbreakBlazor.Pages
                         }
                     }
                 }
+            }
+
+            if (attribute.Points >= 0)
+            {
+                ClearHighlightAttribute(attribute);
             }
 
             return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
@@ -616,6 +645,16 @@ namespace OutbreakBlazor.Pages
             }
 
             ability.AdvancedUsing = new List<string>();
+
+            if (attribute.Points >= 0)
+            {
+                ClearHighlightAttribute(attribute);
+            }
+
+            if (ThisCharacter.GestaltLevel >= 0)
+            {
+                ClearHighlightGestaltValue();
+            }
         }
 
         protected void InitializePlayerSkills(BaseSkill skill)
@@ -1087,6 +1126,11 @@ namespace OutbreakBlazor.Pages
                 skill.AdvancementsList.Remove(lastAdvancement);
             }
 
+            if (ThisCharacter.GestaltLevel < 0)
+            {
+                HighlightGestaltValue();
+            }
+
             return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
         }
 
@@ -1101,6 +1145,11 @@ namespace OutbreakBlazor.Pages
                 skill.Advancements -= 1;
                 skill.Value = InitialValue - lastAdvancement;
                 skill.AdvancementsList.Remove(skill.AdvancementsList[^1]);
+            }
+
+            if (ThisCharacter.GestaltLevel >= 0)
+            {
+                ClearHighlightGestaltValue();
             }
 
             return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
@@ -1123,6 +1172,11 @@ namespace OutbreakBlazor.Pages
 
             ThisCharacter.GestaltLevel -= skill.AdvancementsList.Count;
 
+            if (ThisCharacter.GestaltLevel >= 0)
+            {
+                ClearHighlightGestaltValue();
+            }
+
             ThisPlayerSkill = newPlayerSkill;
 
             onSpecializePlayerSkillToggleOn(ThisPlayerSkill);
@@ -1132,6 +1186,11 @@ namespace OutbreakBlazor.Pages
         {
             ThisCharacter.SpecializedPlayerSkills.Remove(skill);
             ThisCharacter.GestaltLevel += skill.AdvancementsList.Count;
+
+            if (ThisCharacter.GestaltLevel >= 0)
+            {
+                ClearHighlightGestaltValue();
+            }
         }
 
         protected void InitializePlayerTrainingValues(BaseTrainingValue value)
@@ -1216,7 +1275,7 @@ namespace OutbreakBlazor.Pages
 
         protected void HandleToggleSkills()
         {
-            _addSkills = !_addSkills;
+            AddSkills = !AddSkills;
         }
 
         protected BSModal GestaltDescription { get; set; }
@@ -1267,6 +1326,13 @@ namespace OutbreakBlazor.Pages
             WelcomeModal.Toggle();
         }
 
+        protected BSModal CharacterSheetModal { get; set; }
+        protected void ToggleCharacterSheetModal(MouseEventArgs e)
+        {
+            GeneratePdf();
+            CharacterSheetModal.Toggle();
+        }
+
         protected BSModal BaseAbilityDescription { get; set; }
         protected void onBaseAbilityToggleOn(BaseAbility ability)
         {
@@ -1290,8 +1356,13 @@ namespace OutbreakBlazor.Pages
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
             attribute.Points -= 1;
-            ability.AdvancedUsing.Add(Helper.FormString2);
+            ability.AdvancedUsing.Add("points");
             HasInstruction = false;
+
+            if (attribute.Points < 0)
+            {
+                HighlightAttribute(attribute);
+            }
 
             PlayerAbilityAttributeSelection.Toggle();
         }
@@ -1300,7 +1371,7 @@ namespace OutbreakBlazor.Pages
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
             ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-            ability.AdvancedUsing.Add(Helper.FormString2);
+            ability.AdvancedUsing.Add("gestalt");
 
             if (ability.BaseAbility.IsProfessional && HasInstruction == false)
             {
@@ -1309,6 +1380,11 @@ namespace OutbreakBlazor.Pages
             }
 
             HasInstruction = false;
+
+            if (ThisCharacter.GestaltLevel < 0)
+            {
+                HighlightGestaltValue();
+            }
 
             PlayerAbilityAttributeSelection.Toggle();
         }
@@ -1326,8 +1402,13 @@ namespace OutbreakBlazor.Pages
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
             attribute.Points -= 1;
-            ability.AdvancedUsing.Add(Helper.FormString2);
+            ability.AdvancedUsing.Add("points");
             HasInstruction = false;
+
+            if (attribute.Points < 0)
+            {
+                HighlightAttribute(attribute);
+            }
 
             PlayerAbilitySpendSelection.Toggle();
         }
@@ -1335,16 +1416,21 @@ namespace OutbreakBlazor.Pages
         {
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
-            ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-            ability.AdvancedUsing.Add(Helper.FormString2);
+            ThisCharacter.GestaltLevel -= ability.Tier;
+            ability.AdvancedUsing.Add("gestalt");
 
             if (ability.BaseAbility.IsProfessional && HasInstruction == false)
             {
-                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+                ThisCharacter.GestaltLevel -= ability.Tier;
                 ability.AdvancedUsing[^1] += "Double";
             }
 
             HasInstruction = false;
+
+            if (ThisCharacter.GestaltLevel < 0)
+            {
+                HighlightGestaltValue();
+            }
 
             PlayerAbilitySpendSelection.Toggle();
         }
@@ -1362,8 +1448,13 @@ namespace OutbreakBlazor.Pages
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
             attribute.Points -= 1;
-            ability.AdvancedUsing.Add(Helper.FormString2);
+            ability.AdvancedUsing.Add("points");
             HasInstruction = false;
+
+            if (attribute.Points < 0)
+            {
+                HighlightAttribute(attribute);
+            }
 
             PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
         }
@@ -1372,7 +1463,7 @@ namespace OutbreakBlazor.Pages
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
             ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-            ability.AdvancedUsing.Add(Helper.FormString2);
+            ability.AdvancedUsing.Add("gestalt");
 
             if (ability.BaseAbility.IsProfessional && HasInstruction == false)
             {
@@ -1382,9 +1473,66 @@ namespace OutbreakBlazor.Pages
 
             HasInstruction = false;
 
+            if (ThisCharacter.GestaltLevel < 0)
+            {
+                HighlightGestaltValue();
+            }
+
             PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
         }
 
+
+        protected void HighlightAttribute(PlayerAttribute attribute)
+        {
+            var attributeName = attribute.BaseAttribute.Name;
+
+            if (attributeName == "Strength")
+            {
+                HighlightStrength = "background-color: #FFFF00";
+            }
+            else if (attributeName == "Perception")
+            {
+                HighlightPerception = "background-color: #FFFF00";
+            }
+            else if (attributeName == "Empathy")
+            {
+                HighlightEmpathy = "background-color: #FFFF00";
+            }
+            else if (attributeName == "Willpower")
+            {
+                HighlightWillpower = "background-color: #FFFF00";
+            }
+        }
+        protected void ClearHighlightAttribute(PlayerAttribute attribute)
+        {
+            var attributeName = attribute.BaseAttribute.Name;
+
+            if (attributeName == "Strength")
+            {
+                HighlightStrength = "";
+            }
+            else if (attributeName == "Perception")
+            {
+                HighlightPerception = "";
+            }
+            else if (attributeName == "Empathy")
+            {
+                HighlightEmpathy = "";
+            }
+            else if (attributeName == "Willpower")
+            {
+                HighlightWillpower = "";
+            }
+        }
+
+        protected void HighlightGestaltValue()
+        {
+            HighlightGestalt = "background-color: #FFFF00";
+        }
+        protected void ClearHighlightGestaltValue()
+        {
+            HighlightGestalt = "";
+        }
 
         protected async Task<PlayerAbility> UpdateThisPlayerAttribute()
         {
@@ -1572,6 +1720,8 @@ namespace OutbreakBlazor.Pages
             List<Label> page1Labels = new List<Label>();
             TransparencyGroup page0TransparencyGroup = new TransparencyGroup(0.25f);
             TransparencyGroup page1TransparencyGroup = new TransparencyGroup(0.35f);
+
+            CollapseRightSidebar = "none";
 
             page0Labels.Add(new Label(ThisCharacter.FullName, 100, 30, 504, 100, Font.Helvetica, headerFontSize, TextAlign.Left));
 
@@ -1821,6 +1971,7 @@ namespace OutbreakBlazor.Pages
             mergeDoc.Draw(path);
 
             CharacterSheetLocation = $"/CharacterSheets/Outbreak_Undead_Character_{rand}.pdf";
+
         }
 
         internal static string GetPath(string filePath)

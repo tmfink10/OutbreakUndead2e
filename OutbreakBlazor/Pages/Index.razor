@@ -4,14 +4,15 @@
 @inherits IndexBase
 
 
-@if (_createNew == false)
+
+@if (CreateNew == false)
 {
     <h1 style="margin-bottom: 20px">Outbreak Undead 2e: Character Creator</h1>
 
     <p>
         Welcome to the character creator section. Character creation happens in three phases: <br />
         1) Choose your character's core traits such as Name, Age, and S.P.E.W. attributes.<br />
-        2) Choose your character's attributes.<br />
+        2) Choose your character's abilities.<br />
         3) Update your character's skills.<br /><br />
 
         You will spend Gestalt in each of the three phases to advance your stats. How to spend Gestalt is entirely a matter of preference. <br />
@@ -50,20 +51,37 @@
 }
 else
 {
+    <div class="w3-sidebar w3-bar-block" style="width: 25%; right: 0;" id="rightSidebar">
+        @if (AddSkills)
+        {
+            <div align="center" style="padding-bottom: 20px; padding-top: 10px">
+                <BSButton Size="Size.Large" @onclick="ToggleCharacterSheetModal">Generate Character</BSButton>
+            </div>
+        }
+        <h2 align="center">Resources</h2><br /><br />
+        <h4 style="@HighlightStrength">Strength: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points</h4><br />
+        <h4 style="@HighlightPerception">Perception: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points</h4><br />
+        <h4 style="@HighlightEmpathy">Empathy: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points</h4><br />
+        <h4 style="@HighlightWillpower">Willpower: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points</h4><br /><br />
+        <h4 style ="@HighlightGestalt">Gestalt: @ThisCharacter.GestaltLevel</h4>
+
+    </div>
+
+
     <h1 style="margin-bottom: 60px" align="center" class="col-md-8">Outbreak Undead 2e: Character Creator</h1>
     <EditForm Model="ThisCharacter" OnValidSubmit="HandleOnValidPlayerCharacterSubmit" style="margin-bottom: 15px">
         <BSFormGroup>
             <h2 style="margin-bottom: 10px" align="center" class="col-md-8">Basic Information</h2>
             <BSRow Class="col-md-8" style="margin-bottom: 5px">
-                <BSCol>
+                <BSCol style="width: 40%">
                     <BSLabel For="characterFirstName">First Name</BSLabel>
                     <BSBasicInput class="form-control" Id="characterFirstName" InputType="InputType.Text" PlaceHolder="First Name" @bind-Value="ThisCharacter.FirstName" />
                 </BSCol>
-                <BSCol>
+                <BSCol style="width: 40%">
                     <BSLabel For="characterLastName">Last Name</BSLabel>
                     <BSBasicInput Id="characterLastName" InputType="InputType.Text" PlaceHolder="Last Name" @bind-Value="ThisCharacter.LastName" />
                 </BSCol>
-                <BSCol>
+                <BSCol style="width: 20%">
                     <BSLabel For="characterAge">Age</BSLabel>
                     <BSBasicInput Id="characterAge" InputType="InputType.Number" PlaceHolder="@ThisCharacter.Age" @bind-Value="ThisCharacter.Age" @onblur="SetGestalt" />
                 </BSCol>
@@ -71,7 +89,9 @@ else
             <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">S.P.E.W. Attributes</h2>
             <BSRow Class="col-md-8" style="margin-bottom: 15px">
                 <BSCol>
-                    <BSLabel For="characterStrength" @onclick="@onStrengthToggle">Strength    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points)</BSLabel>
+                    <BSLabel For="characterStrength" 
+                             style="@HighlightStrength" 
+                             @onclick="@onStrengthToggle">Strength    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points)</BSLabel>
                     <BSBasicInput Id="characterStrength"
                                   PlaceHolder="@StrengthService.Value"
                                   InputType="InputType.Number"
@@ -80,7 +100,9 @@ else
                                   @onclick="@(() => HandleIncrementPlayerAttribute(StrengthService))" />
                 </BSCol>
                 <BSCol>
-                    <BSLabel For="characterPerception" @onclick="@onPerceptionToggle">Perception    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points)</BSLabel>
+                    <BSLabel For="characterPerception" 
+                             style="@HighlightPerception"
+                             @onclick="@onPerceptionToggle">Perception    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points)</BSLabel>
                     <BSBasicInput Id="characterPerception"
                                   PlaceHolder="@PerceptionService.Value"
                                   InputType="InputType.Number"
@@ -89,7 +111,9 @@ else
                                   @onclick="(() => HandleIncrementPlayerAttribute(PerceptionService))" />
                 </BSCol>
                 <BSCol>
-                    <BSLabel For="characterEmpathy" @onclick="@onEmpathyToggle">Empathy    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points)</BSLabel>
+                    <BSLabel For="characterEmpathy" 
+                             style="@HighlightEmpathy"
+                             @onclick="@onEmpathyToggle">Empathy    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points)</BSLabel>
                     <BSBasicInput Id="characterEmpathy"
                                   PlaceHolder="@EmpathyService.Value"
                                   InputType="InputType.Number"
@@ -98,7 +122,9 @@ else
                                   @onclick="(() => HandleIncrementPlayerAttribute(EmpathyService))" />
                 </BSCol>
                 <BSCol>
-                    <BSLabel For="characterWillpower" @onclick="@onWillpowerToggle">Willpower    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points)</BSLabel>
+                    <BSLabel For="characterWillpower" 
+                             style="@HighlightWillpower"
+                             @onclick="@onWillpowerToggle">Willpower    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points)</BSLabel>
                     <BSBasicInput Id="characterWillpower"
                                   PlaceHolder="@WillpowerService.Value"
                                   InputType="InputType.Number"
@@ -114,7 +140,7 @@ else
                     <BSBasicInput Id="survivalPoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.SurvivalPoints" @bind-Value="ThisCharacter.SurvivalPoints" />
                 </BSCol>
                 <BSCol>
-                    <BSLabel For="gestaltLevel" @onclick="ToggleGestaltDescription">Gestalt Level</BSLabel>
+                    <BSLabel For="gestaltLevel" style="@HighlightGestalt" @onclick="ToggleGestaltDescription">Gestalt Level</BSLabel>
                     <BSBasicInput Id="gestaltLevel" InputType="InputType.Number" PlaceHolder="@ThisCharacter.GestaltLevel" @bind-Value="ThisCharacter.GestaltLevel"></BSBasicInput>
                 </BSCol>
                 <BSCol>
@@ -124,7 +150,7 @@ else
             </BSRow>
         </BSFormGroup>
 
-        @if (_addAbilities == false)
+        @if (AddAbilities == false)
         {
             <div class="text-centered col-md-8">
                 <BSButton Color="BlazorStrap.Color.Primary" ButtonType="ButtonType.Submit" style="width: 45%">Continue</BSButton>
@@ -133,7 +159,7 @@ else
 
     </EditForm>
 
-    @if (_addAbilities == false)
+    @if (AddAbilities == false)
     {
 
     }
@@ -187,12 +213,12 @@ else
                                              Class="text-center"
                                              IsDisabled="true"
                                              @bind-Value="ability.Tier"
-                                             style="width: 60px;" />
+                                             style="width: 55px;" />
                                     <BSButton Color="Color.Success" @onclick="(()=>HandleIncreasePlayerAbility(ability))">+</BSButton>
                                 </td>
                                 <td>
                                     <InputText class="form-control"
-                                               style="width:100%;"
+                                               style="width:90%;"
                                                @bind-Value="@ability.Notes" />
                                 </td>
                                 <td>
@@ -207,7 +233,7 @@ else
             </BSForm>
         }
 
-        @if (_addSkills == false)
+        @if (AddSkills == false)
         {
             <div class="text-centered col-md-8">
                 <BSButton style="width: 45%" @onclick="HandleToggleSkills">Continue</BSButton>
@@ -297,15 +323,17 @@ else
                 }
             </div>
             <div class="text-centered col-md-8">
-                <BSButton style="width: 45%; margin-bottom: 10px;" @onclick="GeneratePdf">Generate Character Sheet</BSButton>
+                <BSButton style="width: 45%; margin-bottom: 10px;" @onclick="ToggleCharacterSheetModal">Generate Character</BSButton>
             </div>
-            if (CharacterSheetLocation != null)
-            {
-                <iframe src="@CharacterSheetLocation" height="1000px" width="100%"></iframe>
-            }
-
         }
     }
+
+    <BSModal @ref="CharacterSheetModal" IsFullScreen="true">
+        <BSModalHeader OnClick="ToggleCharacterSheetModal">Download or Print</BSModalHeader>
+        <BSModalBody>
+            <iframe src="@CharacterSheetLocation" height="100%" width="100%"></iframe>
+        </BSModalBody>
+    </BSModal>
 
     <BSModal @ref="GestaltDescription" IsCentered="true">
         <BSModalHeader OnClick="@ToggleGestaltDescription">Gestalt</BSModalHeader>
