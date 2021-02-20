@@ -60,9 +60,11 @@ namespace OutbreakBlazor.Pages
         protected bool AddAbilities;
         protected bool AddSkills;
         protected bool HasInstruction;
+        protected bool SeparatorReady;
         protected int InitialValue;
         protected int FinalValue;
         protected int Delta;
+        protected int Timer;
         protected List<string> ActionsLog = new List<string>();
 
         protected override async Task OnInitializedAsync()
@@ -119,6 +121,7 @@ namespace OutbreakBlazor.Pages
 
         protected async Task HandleNewCharacterClick()
         {
+            AddToActionsLog($"<div align=\"center\"><b>***** New Character Created *****</b></div>");
             CreateNew = !CreateNew;
 
             ThisCharacter.Age = 30;
@@ -365,6 +368,8 @@ namespace OutbreakBlazor.Pages
                     BaseAbility = BaseAbilities.FirstOrDefault(a => a.Id == Int32.Parse(Helper.FormString)), Tier = 1
                 };
 
+                AddToActionsLog($"<div align=\"center\"><b>^---- Added {tempAbility.BaseAbility.ShortName} ----^</b></div>");
+
                 if (tempAbility.BaseAbility.Description.Contains("Skill Support: {"))
                 {
                     var end = tempAbility.BaseAbility.Description.IndexOf("}");
@@ -426,6 +431,18 @@ namespace OutbreakBlazor.Pages
                     else
                     {
                         OnPlayerAbilityToggleOn(tempAbility);
+                    }
+                }
+
+                foreach (var trainingValue in ThisCharacter.TrainingValues)
+                {
+                    foreach (var baseTrainingValue in tempAbility.BaseAbility.ModifiesBaseTrainingValues)
+                    {
+                        if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
+                        {
+                            trainingValue.Value += 1;
+                            AddToActionsLog($"{tempAbility.BaseAbility.ShortName} increased Training Value for {trainingValue.BaseTrainingValue.Name} by 1");
+                        }
                     }
                 }
 
@@ -519,6 +536,8 @@ namespace OutbreakBlazor.Pages
 
         protected async Task<PlayerAbility> HandleIncreasePlayerAbility(PlayerAbility ability)
         {
+            AddToActionsLog("<div align=\"center\"><b>^---- Increase Ability ----^</b></div>");
+
             var attribute = ThisCharacter.PlayerAttributes
                 .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
@@ -542,7 +561,7 @@ namespace OutbreakBlazor.Pages
                     if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
                     {
                         trainingValue.Value += 1;
-                        AddToActionsLog($"{ability.BaseAbility.ShortName} increased {trainingValue.BaseTrainingValue.Name} by 1");
+                        AddToActionsLog($"{ability.BaseAbility.ShortName} increased Training Value for {trainingValue.BaseTrainingValue.Name} by 1");
                     }
                 }
             }
@@ -552,6 +571,7 @@ namespace OutbreakBlazor.Pages
 
         protected async Task<PlayerAbility> HandleDecreasePlayerAbility(PlayerAbility ability)
         {
+            AddToActionsLog("<div align=\"center\"><b>^---- Decrease Ability ----^</b></div>");
             var attribute = ThisCharacter.PlayerAttributes
                 .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
@@ -612,6 +632,8 @@ namespace OutbreakBlazor.Pages
 
         protected void DeletePlayerAbility(PlayerAbility ability)
         {
+            AddToActionsLog("<div align=\"center\"><b>^---- Delete Ability ----^</b></div>");
+
             ThisCharacter.PlayerAbilities.Remove(ability);
             var attribute = ThisCharacter.PlayerAttributes
                 .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
@@ -771,6 +793,7 @@ namespace OutbreakBlazor.Pages
             }
 
             ThisCharacter.PlayerSkills.Add(playerSkill);
+            Console.WriteLine(playerSkill.BaseSkill.Name);
         }
 
         protected async Task<PlayerSkill> HandleIncrementPlayerSkill(PlayerSkill skill)
@@ -964,6 +987,8 @@ namespace OutbreakBlazor.Pages
 
         protected async Task<PlayerSkill> HandleIncreasePlayerSkill(PlayerSkill skill)
         {
+            AddToActionsLog("<div align=\"center\"><b>^---- Increase Skill ----^</b></div>");
+
             InitialValue = skill.Value;
 
             var totalAdvancement = 0;
@@ -1171,11 +1196,22 @@ namespace OutbreakBlazor.Pages
             AddToActionsLog("Details:");
             AddToActionsLog($"Total advancement for {skill.BaseSkill.Name} = {totalAdvancement}");
 
+            if (skill.Value > 99)
+            {
+                var difference = skill.Value - 99;
+                skill.Value = 99;
+                skill.AdvancementsList[^1] = skill.AdvancementsList[^1] - difference;
+                AddToActionsLog($"<i>{skill.BaseSkill.Name} has reached the maximum allowed value of 99.</i>");
+            }
+
             return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
         }
 
         protected async Task<PlayerSkill> HandleDecreasePlayerSkill(PlayerSkill skill)
         {
+
+            AddToActionsLog("<div align=\"center\"><b>^---- Decrease Skill Value ----^</b></div>");
+
             InitialValue = skill.Value;
 
             if (skill.AdvancementsList.Count>0)
@@ -1198,6 +1234,7 @@ namespace OutbreakBlazor.Pages
 
         protected void HandleSpecializeSkill(PlayerSkill skill)
         {
+
             var newPlayerSkill = new PlayerSkill
             {
                 BaseSkill = skill.BaseSkill,
@@ -1212,10 +1249,11 @@ namespace OutbreakBlazor.Pages
             };
 
             ThisCharacter.GestaltLevel -= skill.AdvancementsList.Count;
+            
 
-            if (ThisCharacter.GestaltLevel >= 0)
+            if (ThisCharacter.GestaltLevel < 0)
             {
-                ClearHighlightGestaltValue();
+                HighlightGestaltValue();
             }
 
             ThisPlayerSkill = newPlayerSkill;
@@ -1227,6 +1265,8 @@ namespace OutbreakBlazor.Pages
         {
             ThisCharacter.SpecializedPlayerSkills.Remove(skill);
             ThisCharacter.GestaltLevel += skill.AdvancementsList.Count;
+            AddToActionsLog($"<div align=\"center\"><b>^---- Remove {skill.BaseSkill.Name} ({skill.Specialty}) ----^</b></div>");
+            AddToActionsLog($"+{skill.AdvancementsList.Count} Gestalt for removing {skill.BaseSkill.Name} ({skill.Specialty})");
 
             if (ThisCharacter.GestaltLevel >= 0)
             {
@@ -1442,7 +1482,7 @@ namespace OutbreakBlazor.Pages
                 HighlightAttribute(attribute);
             }
 
-            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to add {ability.BaseAbility.Name}";
+            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to add {ability.BaseAbility.ShortName}";
             AddToActionsLog(result);
 
             PlayerAbilityAttributeSelection.Toggle();
@@ -1470,7 +1510,7 @@ namespace OutbreakBlazor.Pages
                 HighlightGestaltValue();
             }
 
-            result += $" to add {ability.BaseAbility.Name} linked to {attribute.BaseAttribute.Name}";
+            result += $" to add {ability.BaseAbility.ShortName} linked to {attribute.BaseAttribute.Name}";
             AddToActionsLog(result);
 
             PlayerAbilityAttributeSelection.Toggle();
@@ -1496,7 +1536,7 @@ namespace OutbreakBlazor.Pages
                 HighlightAttribute(attribute);
             }
 
-            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to advance {ability.BaseAbility.Name} to tier {ability.Tier}";
+            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to add {ability.BaseAbility.ShortName}";
             AddToActionsLog(result);
 
             PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
@@ -1524,7 +1564,7 @@ namespace OutbreakBlazor.Pages
                 HighlightGestaltValue();
             }
 
-            result += $" to add {ability.BaseAbility.Name} linked to {attribute.BaseAttribute.Name}";
+            result += $" to add {ability.BaseAbility.ShortName} linked to {attribute.BaseAttribute.Name}";
             AddToActionsLog(result);
 
             PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
@@ -1577,7 +1617,7 @@ namespace OutbreakBlazor.Pages
                 HighlightGestaltValue();
             }
 
-            result += $" to advance {ability.BaseAbility.Name} to tier {ability.Tier}";
+            result += $" to advance {ability.BaseAbility.ShortName} to tier {ability.Tier}";
             AddToActionsLog(result);
 
             PlayerAbilitySpendSelection.Toggle();
@@ -1665,18 +1705,18 @@ namespace OutbreakBlazor.Pages
             {
                 var newPlayerSkill = ThisPlayerSkill;
                 var skillName = newPlayerSkill.BaseSkill.Name;
-                var skillSpeciality = newPlayerSkill.Specialty.ToLower();
+                var skillSpecialty = newPlayerSkill.Specialty.ToLower();
 
                 if (skillName == "Pilot")
                 {
-                    if (skillSpeciality == "motorcycle" || skillSpeciality == "motorcycles" || skillSpeciality == "dirt bike" || skillSpeciality == "dirt bikes")
+                    if (skillSpecialty == "motorcycle" || skillSpecialty == "motorcycles" || skillSpecialty == "dirt bike" || skillSpecialty == "dirt bikes")
                     {
                         if (ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == "Biker") != null)
                         {
                             newPlayerSkill.IsSupported = true;
                         }
                     }
-                    if (skillSpeciality == "bicycle" || skillSpeciality == "bicycles" || skillSpeciality == "bike" || skillSpeciality == "bikes")
+                    if (skillSpecialty == "bicycle" || skillSpecialty == "bicycles" || skillSpecialty == "bike" || skillSpecialty == "bikes")
                     {
                         if (ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == "BMX") != null)
                         {
@@ -1692,6 +1732,9 @@ namespace OutbreakBlazor.Pages
                 newPlayerSkill = await PlayerSkillService.CreatePlayerSkill(newPlayerSkill);
 
                 ThisCharacter.SpecializedPlayerSkills.Add(newPlayerSkill);
+
+                AddToActionsLog($"<div align=\"center\"><b>^---- Specialize {ThisPlayerSkill.BaseSkill.Name} in {ThisPlayerSkill.Specialty} ----^</b></div>");
+                AddToActionsLog($"-{newPlayerSkill.AdvancementsList.Count} Gestalt to create {newPlayerSkill.BaseSkill.Name} ({newPlayerSkill.Specialty}) ");
 
                 ThisPlayerSkill = new PlayerSkill(){BaseSkill = new BaseSkill()};
             }

@@ -67,7 +67,7 @@ else
         <h2 align="center">Log</h2>
         @foreach(var action in ActionsLog)
         {
-            <span>@action</span><br />
+            <span>@((MarkupString)action)</span><br />
         }
 
     </div>
