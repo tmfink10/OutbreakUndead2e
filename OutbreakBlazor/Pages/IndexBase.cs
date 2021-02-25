@@ -85,11 +85,6 @@ namespace OutbreakBlazor.Pages
                     {
                         ability.ModifiesBaseTrainingValues.Add(BaseTrainingValues.FirstOrDefault(t => t.Name == value.ToString()));
                     }
-
-                    foreach (var item in ability.ModifiesBaseTrainingValues)
-                    {
-                        Console.WriteLine(item.Name);
-                    }
                 }
             }
 
@@ -793,7 +788,6 @@ namespace OutbreakBlazor.Pages
             }
 
             ThisCharacter.PlayerSkills.Add(playerSkill);
-            Console.WriteLine(playerSkill.BaseSkill.Name);
         }
 
         protected async Task<PlayerSkill> HandleIncrementPlayerSkill(PlayerSkill skill)
