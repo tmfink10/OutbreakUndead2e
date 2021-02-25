@@ -60,12 +60,20 @@ namespace OutbreakBlazor.Pages
         protected bool AddAbilities;
         protected bool AddSkills;
         protected bool HasInstruction;
-        protected bool SeparatorReady;
         protected int InitialValue;
         protected int FinalValue;
         protected int Delta;
-        protected int Timer;
         protected List<string> ActionsLog = new List<string>();
+        protected List<PlayerSkill> BasicSkills = new List<PlayerSkill>();
+        protected List<PlayerSkill> BasicSkillsLeftTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> BasicSkillsRightTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> TrainedSkills = new List<PlayerSkill>();
+        protected List<PlayerSkill> TrainedSkillsLeftTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> TrainedSkillsRightTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> ExpertSkills = new List<PlayerSkill>();
+        protected List<PlayerSkill> ExpertSkillsLeftTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> ExpertSkillsRightTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> SpecializedSkills = new List<PlayerSkill>();
 
         protected override async Task OnInitializedAsync()
         {
@@ -227,6 +235,67 @@ namespace OutbreakBlazor.Pages
             ThisCharacter.DamageThreshold = strength.Bonus + willpower.Bonus;
             ThisCharacter.Morale = empathy.Bonus + willpower.Bonus;
             ThisCharacter.CargoCapacity = strength.Bonus;
+
+            var skillCounter = 0;
+
+            BasicSkills = BasicSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+            TrainedSkills = TrainedSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+            ExpertSkills = ExpertSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+
+            var counter = 0;
+            foreach (var skill in BasicSkills)
+            {
+                if (counter <= BasicSkills.Count/2 && counter * 2 != BasicSkills.Count)
+                {
+                    BasicSkillsLeftTable.Add(skill);
+                }
+                else
+                {
+                    BasicSkillsRightTable.Add(skill);
+                }
+
+                counter++;
+            }
+
+            counter = 0;
+            foreach (var skill in TrainedSkills)
+            {
+                if (counter <= TrainedSkills.Count/2 && counter*2 != TrainedSkills.Count)
+                {
+                    TrainedSkillsLeftTable.Add(skill);
+                }
+                else
+                {
+                    TrainedSkillsRightTable.Add(skill);
+                }
+
+                counter ++;
+            }
+
+            counter = 0;
+            foreach (var skill in ExpertSkills)
+            {
+                if (counter <= ExpertSkills.Count/2 && counter * 2 != ExpertSkills.Count)
+                {
+                    ExpertSkillsLeftTable.Add(skill);
+                }
+                else
+                {
+                    ExpertSkillsRightTable.Add(skill);
+                }
+
+                counter++;
+            }
+
+            Console.WriteLine(BasicSkills.Count);
+            Console.WriteLine(TrainedSkills.Count);
+            Console.WriteLine(ExpertSkills.Count);
+            Console.WriteLine(BasicSkillsLeftTable.Count);
+            Console.WriteLine(BasicSkillsRightTable.Count);
+            Console.WriteLine(TrainedSkillsLeftTable.Count);
+            Console.WriteLine(TrainedSkillsRightTable.Count);
+            Console.WriteLine(ExpertSkillsLeftTable.Count);
+            Console.WriteLine(ExpertSkillsRightTable.Count);
 
             AddAbilities = true;
 
@@ -695,7 +764,20 @@ namespace OutbreakBlazor.Pages
 
         protected void InitializePlayerSkills(BaseSkill skill)
         {
-            var playerSkill = new PlayerSkill();
+            var playerSkill = new PlayerSkill(){BaseSkill = skill};
+
+            if (skill.Name == "Diplomacy <Barter/Bribe>" ||
+                skill.Name == "Diplomacy <Command>" ||
+                skill.Name == "Diplomacy <Determine Motives>" ||
+                skill.Name == "Diplomacy <Intimidate>" ||
+                skill.Name == "Diplomacy <Persuade>")
+            {
+                var specialty = skill.Name.Remove(0, 11);
+                specialty = specialty.Remove(specialty.Length - 1);
+                playerSkill.Specialty = specialty;
+                playerSkill.IsSpecialized = true;
+            }
+
             if (skill.Type == "Expert")
             {
                 if (skill.PrimaryAttributeBaseAttributeId == 1 || skill.SecondaryAttributeBaseAttributeId == 1)
@@ -721,6 +803,9 @@ namespace OutbreakBlazor.Pages
                     playerSkill.Value += WillpowerService.Bonus;
                     playerSkill.AttributeValue += WillpowerService.Bonus;
                 }
+
+                ExpertSkills.Add(playerSkill);
+
             }
             else
             {
@@ -771,20 +856,16 @@ namespace OutbreakBlazor.Pages
                     playerSkill.Value += WillpowerService.Bonus;
                     playerSkill.AttributeValue += WillpowerService.Bonus;
                 }
-            }
 
-            playerSkill.BaseSkill = skill;
+                if (skill.Type == "Trained")
+                {
+                    TrainedSkills.Add(playerSkill);
+                }
 
-            if (skill.Name == "Diplomacy <Barter/Bribe>" || 
-                skill.Name == "Diplomacy <Command>" || 
-                skill.Name == "Diplomacy <Determine Motives>" || 
-                skill.Name == "Diplomacy <Intimidate>" || 
-                skill.Name == "Diplomacy <Persuade>")
-            {
-                var specialty = skill.Name.Remove(0, 11);
-                specialty = specialty.Remove(specialty.Length - 1);
-                playerSkill.Specialty = specialty;
-                playerSkill.IsSpecialized = true;
+                if (skill.Type == "Basic")
+                {
+                    BasicSkills.Add(playerSkill);
+                }
             }
 
             ThisCharacter.PlayerSkills.Add(playerSkill);
