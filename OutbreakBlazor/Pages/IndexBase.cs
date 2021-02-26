@@ -1490,8 +1490,6 @@ namespace OutbreakBlazor.Pages
                     }
                 }
 
-                newPlayerSkill = await PlayerSkillService.CreatePlayerSkill(newPlayerSkill);
-
                 ThisCharacter.SpecializedPlayerSkills.Add(newPlayerSkill);
 
                 if (SpecializedSkillsLeftTable.Count <= SpecializedSkillsRightTable.Count)
@@ -1514,6 +1512,9 @@ namespace OutbreakBlazor.Pages
             }
 
             SpecializePlayerSkill.Toggle();
+
+            await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
+
         }
 
         protected Array CsvStringToArray(string values)
