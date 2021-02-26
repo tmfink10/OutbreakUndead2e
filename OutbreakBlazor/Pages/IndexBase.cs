@@ -73,7 +73,8 @@ namespace OutbreakBlazor.Pages
         protected List<PlayerSkill> ExpertSkills = new List<PlayerSkill>();
         protected List<PlayerSkill> ExpertSkillsLeftTable = new List<PlayerSkill>();
         protected List<PlayerSkill> ExpertSkillsRightTable = new List<PlayerSkill>();
-        protected List<PlayerSkill> SpecializedSkills = new List<PlayerSkill>();
+        protected List<PlayerSkill> SpecializedSkillsLeftTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> SpecializedSkillsRightTable = new List<PlayerSkill>();
 
         protected override async Task OnInitializedAsync()
         {
@@ -241,6 +242,22 @@ namespace OutbreakBlazor.Pages
             BasicSkills = BasicSkills.OrderBy(s => s.BaseSkill.Name).ToList();
             TrainedSkills = TrainedSkills.OrderBy(s => s.BaseSkill.Name).ToList();
             ExpertSkills = ExpertSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+
+            foreach (var skill in ThisCharacter.PlayerSkills)
+            {
+                if (skill.BaseSkill.Type == "Expert")
+                {
+                    ExpertSkills.Add(skill);
+                }
+                if (skill.BaseSkill.Type == "Trained")
+                {
+                    TrainedSkills.Add(skill);
+                }
+                if (skill.BaseSkill.Type == "Basic")
+                {
+                    BasicSkills.Add(skill);
+                }
+            }
 
             var counter = 0;
             foreach (var skill in BasicSkills)
@@ -804,8 +821,6 @@ namespace OutbreakBlazor.Pages
                     playerSkill.AttributeValue += WillpowerService.Bonus;
                 }
 
-                ExpertSkills.Add(playerSkill);
-
             }
             else
             {
@@ -857,15 +872,6 @@ namespace OutbreakBlazor.Pages
                     playerSkill.AttributeValue += WillpowerService.Bonus;
                 }
 
-                if (skill.Type == "Trained")
-                {
-                    TrainedSkills.Add(playerSkill);
-                }
-
-                if (skill.Type == "Basic")
-                {
-                    BasicSkills.Add(playerSkill);
-                }
             }
 
             ThisCharacter.PlayerSkills.Add(playerSkill);
@@ -1066,12 +1072,15 @@ namespace OutbreakBlazor.Pages
 
             InitialValue = skill.Value;
 
+            
+
             var totalAdvancement = 0;
 
             if (skill.AdvancementsList.Count==5)
             {
                 AddToActionsLog($"{skill.BaseSkill.Name} already advanced 5 times. Further advancement prohibited.");
                 return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+                //PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
             }
 
             if (skill.BaseSkill.Type == "Basic")
@@ -1194,6 +1203,7 @@ namespace OutbreakBlazor.Pages
                 {
                     AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is neither specialized nor supported. Advancement is prohibited.");
                     return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+                    //return await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
                 }
 
                 totalAdvancement += roll;
@@ -1807,6 +1817,15 @@ namespace OutbreakBlazor.Pages
                 newPlayerSkill = await PlayerSkillService.CreatePlayerSkill(newPlayerSkill);
 
                 ThisCharacter.SpecializedPlayerSkills.Add(newPlayerSkill);
+
+                if (SpecializedSkillsLeftTable.Count <= SpecializedSkillsRightTable.Count)
+                {
+                    SpecializedSkillsLeftTable.Add(newPlayerSkill);
+                }
+                else
+                {
+                    SpecializedSkillsRightTable.Add(newPlayerSkill);
+                }
 
                 AddToActionsLog($"<div align=\"center\"><b>^---- Specialize {ThisPlayerSkill.BaseSkill.Name} in {ThisPlayerSkill.Specialty} ----^</b></div>");
                 AddToActionsLog($"-{newPlayerSkill.AdvancementsList.Count} Gestalt to create {newPlayerSkill.BaseSkill.Name} ({newPlayerSkill.Specialty}) ");

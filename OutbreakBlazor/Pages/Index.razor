@@ -246,74 +246,215 @@ else
         }
         else
         {
-            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Skills</h2>
-            <div class="card-columns col-md-8">
-                @foreach (var skill in ThisCharacter.PlayerSkills)
-                {
-                    <div class="card">
-                        <BSForm IsInline="true" Model="skill">
-                            <BSCard Alignment="Alignment.Center">
-                                <BSCard CardType="CardType.Header">
-                                    <BSCard CardType="CardType.Title" @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</BSCard>
-                                    <BSCard CardType="CardType.Title">@skill.Notes</BSCard>
-                                </BSCard>
-                                <BSCard CardType="CardType.Body">
-                                    <BSButton Color="Color.Danger" @onclick="(()=>HandleDecreasePlayerSkill(skill))">-</BSButton>
-                                    <BSInput InputType="InputType.Number"
-                                             IsDisabled="true"
-                                             Size="Size.Large"
-                                             Class="text-center"
-                                             @bind-Value="skill.Value"
-                                             style="width: 75px;" />
-                                    <BSButton Color="Color.Success" @onclick="(()=> HandleIncreasePlayerSkill(skill))">+</BSButton>
-                                </BSCard>
-                                @if (string.IsNullOrWhiteSpace(skill.Notes))
-                                {
-                                    <BSCard CardType="CardType.Footer">
-                                        <BSButton Color="Color.Light" Size="Size.Large" @onclick="(()=>HandleSpecializeSkill(skill))">Specialize</BSButton>
-                                    </BSCard>
-                                }
-                                else
-                                {
-                                    <BSCard CardType="CardType.Footer"></BSCard>
-                                }
-                            </BSCard>
-                        </BSForm>
-                    </div>
-                }
+            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">Skills</h2>
+            <div>
+                <h3 class="col-md-8 text-center outbreak-subcategory">Basic Skills</h3>
             </div>
-            @if (ThisCharacter.SpecializedPlayerSkills.Count > 0)
-            {
-                <h4 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Specialized Skills</h4>
-                <div class="card-columns col-md-8">
-                    @foreach (var skill in ThisCharacter.SpecializedPlayerSkills)
-                    {
-                        <div class="card">
-                            <BSForm IsInline="true" Model="skill">
-                                <BSCard Alignment="Alignment.Center">
-                                    <BSCard CardType="CardType.Header">
-                                        <BSCard CardType="CardType.Title" @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.Name : @skill.Advancements</BSCard>
-                                        <BSCard CardType="CardType.Title">@skill.Specialty</BSCard>
-                                    </BSCard>
-                                    <BSCard CardType="CardType.Body">
-                                        <BSButton Color="Color.Danger" @onclick="(()=>HandleDecreasePlayerSkill(skill))">-</BSButton>
-                                        <BSInput InputType="InputType.Number"
-                                                 IsDisabled="true"
-                                                 Size="Size.Large"
-                                                 Class="text-center"
-                                                 @bind-Value="skill.Value"
-                                                 style="width: 75px;" />
-                                        <BSButton Color="Color.Success" @onclick="(()=> HandleIncreasePlayerSkill(skill))">+</BSButton>
-                                    </BSCard>
-                                    <BSCard CardType="CardType.Footer">
-                                        <BSButton Color="Color.Danger" Size="Size.Large" @onclick="(()=>HandleRemovePlayerSkill(skill))">Remove</BSButton>
-                                    </BSCard>
-                                </BSCard>
-                            </BSForm>
-                        </div>
-                    }
+
+            <div class="skills-table-wrapper col-md-8">
+                <div class="skills-table">
+                    <table>
+                        <tbody>
+                        @foreach (var skill in BasicSkillsLeftTable)
+                        {
+                            <tr>
+                                <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.ShortName</td>
+                                <td>
+                                    <div class="quantity">
+                                        <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                        <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                        <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-specialize" @onclick="(() => HandleSpecializeSkill(skill))">Specialize</button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
                 </div>
-            }
+
+                <div class="skills-table">
+                    <table>
+                        <tbody>
+                        @foreach (var skill in BasicSkillsRightTable)
+                        {
+                            <tr>
+                                <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.ShortName</td>
+                                <td>
+                                    <div class="quantity">
+                                        <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                        <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                        <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-specialize" @onclick="(() => HandleSpecializeSkill(skill))">Specialize</button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <br/>
+            <div>
+                <h3 class="col-md-8 text-center outbreak-subcategory">Trained Skills</h3>
+            </div>
+            <br/>
+
+            <div class="skills-table-wrapper col-md-8">
+                <div class="skills-table">
+                    <table>
+                        <tbody>
+                        @foreach (var skill in TrainedSkillsLeftTable)
+                        {
+                            <tr>
+                                <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.ShortName</td>
+                                <td>
+                                    <div class="quantity">
+                                        <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                        <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                        <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-specialize" @onclick="(() => HandleSpecializeSkill(skill))">Specialize</button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="skills-table">
+                    <table>
+                        <tbody>
+                        @foreach (var skill in TrainedSkillsRightTable)
+                        {
+                            <tr>
+                                <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.ShortName</td>
+                                <td>
+                                    <div class="quantity">
+                                        <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                        <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                        <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-specialize" @onclick="(() => HandleSpecializeSkill(skill))">Specialize</button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <br/>
+            <div>
+                <h3 class="col-md-8 text-center outbreak-subcategory">Expert Skills</h3>
+            </div>
+            <br/>
+
+            <div class="skills-table-wrapper col-md-8">
+                <div class="skills-table">
+                    <table>
+                        <tbody>
+                        @foreach (var skill in ExpertSkillsLeftTable)
+                        {
+                            <tr>
+                                <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.ShortName</td>
+                                <td>
+                                    <div class="quantity">
+                                        <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                        <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                        <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-specialize" @onclick="(() => HandleSpecializeSkill(skill))">Specialize</button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="skills-table">
+                    <table>
+                        <tbody>
+                        @foreach (var skill in ExpertSkillsRightTable)
+                        {
+                            <tr>
+                                <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.BaseSkill.ShortName</td>
+                                <td>
+                                    <div class="quantity">
+                                        <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                        <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                        <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-specialize" @onclick="(() => HandleSpecializeSkill(skill))">Specialize</button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        @if (ThisCharacter.SpecializedPlayerSkills.Count > 0)
+            {
+                <h4 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-subcategory">Specialized Skills</h4>
+
+                <div class="skills-table-wrapper col-md-8">
+                    <div class="skills-table">
+                        <table>
+                            <tbody>
+                            @foreach (var skill in SpecializedSkillsLeftTable)
+                            {
+                                <tr>
+                                    <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.Specialty</td>
+                                    <td>
+                                        <div class="quantity">
+                                            <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                            <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                            <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-specialize" @onclick="(()=>HandleRemovePlayerSkill(skill))">Remove</button>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="skills-table">
+                        <table>
+                            <tbody>
+                            @foreach (var skill in SpecializedSkillsRightTable)
+                            {
+                                <tr>
+                                    <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.Specialty</td>
+                                    <td>
+                                        <div class="quantity">
+                                            <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                            <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                            <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-specialize" @onclick="(()=>HandleRemovePlayerSkill(skill))">Remove</button>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
             <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Training Values</h2>
             <div class="card-columns col-md-8">
