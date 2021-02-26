@@ -45,7 +45,7 @@
             </p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleWelcomeModal">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="BlazorStrap.Color.Primary" OnClick="@ToggleWelcomeModal">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 }
@@ -144,7 +144,7 @@ else
             <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">S.P.E.W Attributes</h2>
             <div class="outbreak-resources col-md-8">
                 <div class="outbreak-resource-child">
-                    <label for="strength" class="outbreak-label">Strength</label>
+                    <label for="strength" class="outbreak-label" @onclick="OnStrengthToggle">Strength</label>
                     <div class="quantity" id="strength">
                         <button class="btn" @onclick="@(()=>HandleDecreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength")))">&lt;</button>
                         <input type="number" class="quantity" disabled @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Value" />
@@ -153,7 +153,7 @@ else
                     <label for="strength" class="outbreak-label">Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points</label>
                 </div>
                 <div class="outbreak-resource-child">
-                    <label for="perception" class="outbreak-label">Perception</label>
+                    <label for="perception" class="outbreak-label" @onclick="OnPerceptionToggle">Perception</label>
                     <div class="quantity" id="perception">
                         <button class="btn" @onclick="@(()=>HandleDecreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception")))">&lt;</button>
                         <input type="number" class="quantity" disabled @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Value" />
@@ -162,7 +162,7 @@ else
                     <label for="perception" class="outbreak-label">Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points</label>
                 </div>
                 <div class="outbreak-resource-child">
-                    <label for="empathy" class="outbreak-label">Empathy</label>
+                    <label for="empathy" class="outbreak-label" @onclick="OnEmpathyToggle">Empathy</label>
                     <div class="quantity" id="empathy">
                         <button class="btn" @onclick="@(()=>HandleDecreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy")))">&lt;</button>
                         <input type="number" class="quantity" disabled @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Value" />
@@ -171,7 +171,7 @@ else
                     <label for="empathy" class="outbreak-label">Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points</label>
                 </div>
                 <div class="outbreak-resource-child">
-                    <label for="willpower" class="outbreak-label">Willpower</label>
+                    <label for="willpower" class="outbreak-label" @onclick="OnWillpowerToggle">Willpower</label>
                     <div class="quantity" id="willpower">
                         <button class="btn" @onclick="@(()=>HandleDecreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower")))">&lt;</button>
                         <input type="number" class="quantity" disabled @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Value" />
@@ -184,7 +184,7 @@ else
             <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">Character Resources</h2>
             <div class="outbreak-resources col-md-8">
                 <div class="outbreak-resource-child">
-                    <label for="strength" class="outbreak-label outbreak-wide">Survival Points</label>
+                    <label for="strength" class="outbreak-label outbreak-wide" @onclick="ToggleSurvivalPointsDescription">Survival Points</label>
                     <div class="quantity outbreak-wide" id="strength">
                         <button class="btn" @onclick="@(()=>ThisCharacter.SurvivalPoints -= 1)">&lt;</button>
                         <input type="number" class="quantity" style="width: 90px" @bind-value="@ThisCharacter.SurvivalPoints" />
@@ -192,7 +192,7 @@ else
                     </div>
                 </div>
                 <div class="outbreak-resource-child">
-                    <label for="strength" class="outbreak-label outbreak-wide">Gestalt Level</label>
+                    <label for="strength" class="outbreak-label outbreak-wide" @onclick="ToggleGestaltDescription">Gestalt Level</label>
                     <div class="quantity outbreak-wide" id="strength">
                         <button class="btn" @onclick="@(()=>ThisCharacter.GestaltLevel -= 1)">&lt;</button>
                         <input type="number" class="quantity" style="width: 90px" @bind-value="@ThisCharacter.GestaltLevel" />
@@ -200,7 +200,7 @@ else
                     </div>
                 </div>
                 <div class="outbreak-resource-child">
-                    <label for="strength" class="outbreak-label outbreak-wide">Competence Points</label>
+                    <label for="strength" class="outbreak-label outbreak-wide" @onclick="ToggleCompetencePointsDescription">Competence Points</label>
                     <div class="quantity outbreak-wide" id="strength">
                         <button class="btn" @onclick="@(()=>ThisCharacter.CompetencePoints -= 1)">&lt;</button>
                         <input type="number" class="quantity" style="width: 90px" @bind-value="@ThisCharacter.CompetencePoints" />
@@ -534,7 +534,7 @@ else
             </p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleGestaltDescription">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="BlazorStrap.Color.Primary" OnClick="@ToggleGestaltDescription">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
     <BSModal @ref="SurvivalPointsDescription" IsCentered="true">
@@ -549,7 +549,7 @@ else
             </p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleSurvivalPointsDescription">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="BlazorStrap.Color.Primary" OnClick="@ToggleSurvivalPointsDescription">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
     <BSModal @ref="CompetencePointsDescription" IsCentered="true">
@@ -566,7 +566,7 @@ else
             </p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@ToggleCompetencePointsDescription">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="BlazorStrap.Color.Primary" OnClick="@ToggleCompetencePointsDescription">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 
@@ -576,7 +576,7 @@ else
             <p>@((MarkupString) ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").BaseAttribute.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnStrengthToggle">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="BlazorStrap.Color.Primary" OnClick="@OnStrengthToggle">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 
@@ -586,7 +586,7 @@ else
             <p>@((MarkupString) PerceptionService.BaseAttribute.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnPerceptionToggle">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="BlazorStrap.Color.Primary" OnClick="@OnPerceptionToggle">Ok</BSButton Class="btn-specialize">
         </BSModalFooter>
     </BSModal>
 
@@ -596,7 +596,7 @@ else
             <p>@((MarkupString) EmpathyService.BaseAttribute.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnEmpathyToggle">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="BlazorStrap.Color.Primary" OnClick="@OnEmpathyToggle">Ok</BSButton Class="btn-specialize">
         </BSModalFooter>
     </BSModal>
 
@@ -606,7 +606,7 @@ else
             <p>@((MarkupString) WillpowerService.BaseAttribute.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnWillpowerToggle">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="BlazorStrap.Color.Primary" OnClick="@OnWillpowerToggle">Ok</BSButton Class="btn-specialize">
         </BSModalFooter>
     </BSModal>
 
@@ -616,7 +616,7 @@ else
             <p>@((MarkupString) ThisBaseAbility.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="BlazorStrap.Color.Primary" OnClick="@OnBaseAbilityToggleOff">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="BlazorStrap.Color.Primary" OnClick="@OnBaseAbilityToggleOff">Ok</BSButton Class="btn-specialize">
         </BSModalFooter>
     </BSModal>
 
@@ -642,14 +642,14 @@ else
                     }
                 }
                 <br />
-                <BSButton ButtonType="ButtonType.Submit"
+                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit"
                           @onclick="(() => OnPlayerAbilityToggleOffUsingGestalt(ThisPlayerAbility))"
                           IsDisabled="string.IsNullOrWhiteSpace(ThisPlayerAbility.AddedUsingBaseAttributeCode)"
-                          style="width: 40%">Gestalt Levels</BSButton>
-                <BSButton ButtonType="ButtonType.Submit"
+                          style="width: 40%">Gestalt Levels</BSButton Class="btn-specialize">
+                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit"
                           @onclick="(() => OnPlayerAbilityToggleOffUsingPoints(ThisPlayerAbility))"
                           IsDisabled="string.IsNullOrWhiteSpace(ThisPlayerAbility.AddedUsingBaseAttributeCode)"
-                          style="width: 40%">Attribute Points</BSButton>
+                          style="width: 40%">Attribute Points</BSButton Class="btn-specialize">
             </BSModalBody>
         </EditForm>
     </BSModal>
@@ -666,8 +666,8 @@ else
                     </BSFormGroup>
                 }
                 <br />
-                <BSButton ButtonType="ButtonType.Submit" @onclick="(()=>OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
-                <BSButton ButtonType="ButtonType.Submit" @onclick="(()=>OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
+                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" @onclick="(()=>OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton Class="btn-specialize">
+                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" @onclick="(()=>OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton Class="btn-specialize">
             </BSModalBody>
         </BSForm>
     </BSModal>
@@ -684,8 +684,8 @@ else
                     </BSFormGroup>
                 }
                 <br />
-                <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
-                <BSButton ButtonType="ButtonType.Submit" OnClick="(()=>OnPlayerAbilitySpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
+                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(()=>OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton Class="btn-specialize">
+                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(()=>OnPlayerAbilitySpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton Class="btn-specialize">
             </BSModalBody>
         </EditForm>
     </BSModal>
@@ -696,7 +696,7 @@ else
             <p>@((MarkupString) ThisBaseSkill.HtmlDescription)</p>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton Color="Color.Primary" OnClick="@OnBaseSkillToggleOff">Ok</BSButton>
+            <BSButton Class="btn-specialize" Color="Color.Primary" OnClick="@OnBaseSkillToggleOff">Ok</BSButton Class="btn-specialize">
         </BSModalFooter>
     </BSModal>
 
@@ -708,7 +708,7 @@ else
             </BSForm>
         </BSModalBody>
         <BSModalFooter>
-            <BSButton ButtonType="ButtonType.Submit" OnClick="(OnSpecializePlayerSkillToggleOff)">Ok</BSButton>
+            <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(OnSpecializePlayerSkillToggleOff)">Ok</BSButton Class="btn-specialize">
         </BSModalFooter>
     </BSModal>
 }
