@@ -513,13 +513,6 @@ namespace OutbreakBlazor.Pages
             }
         }
 
-        protected async Task<PlayerAbility> HandleOnValidPlayerAbilitySubmit()
-        {
-            Delta = FinalValue - InitialValue;
-            UpdateGestalt();
-            return await PlayerAbilityService.UpdatePlayerAbility(ThisPlayerAbility.Id, ThisPlayerAbility);
-        }
-
         protected async Task<PlayerAbility> HandleIncreasePlayerAbility(PlayerAbility ability)
         {
             AddToActionsLog($"<div align=\"center\"><b>^---- Increase {ability.BaseAbility.ShortName} Value ----^</b></div>");
@@ -625,7 +618,7 @@ namespace OutbreakBlazor.Pages
 
             for (int i = ability.AdvancedUsing.Count-1; i > -1; i--)
             {
-                if (ability.AdvancedUsing[i] == "Gestalt")
+                if (ability.AdvancedUsing[i] == "gestalt")
                 {
                     if (i == 0)
                     {

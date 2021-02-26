@@ -34,7 +34,7 @@
 
 
     </p>
-    <button class="btn btn-primary" @onclick="HandleNewCharacterClick">Create New Character</button>
+    <button class="btn btn-specialize" @onclick="HandleNewCharacterClick">Create New Character</button>
 
     <BSModal @ref="WelcomeModal" IsCentered="true">
         <BSModalHeader OnClick="@ToggleWelcomeModal">More Information</BSModalHeader>
@@ -55,7 +55,7 @@ else
         @if (AddSkills)
         {
             <div align="center" style="padding-bottom: 20px; padding-top: 10px">
-                <BSButton Size="Size.Large" @onclick="ToggleCharacterSheetModal">Generate Character</BSButton>
+                <button class="btn btn-prize" style="width: 250px; height: 50px;" @onclick="ToggleCharacterSheetModal">Generate Character</button>
             </div>
         }
         <h2 align="center">Resources</h2><br />
@@ -177,14 +177,14 @@ else
     }
     else
     {
-        <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Abilities</h2>
+        <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">Abilities</h2>
 
         <BSForm Model="Helper" IsInline="true" OnValidSubmit="HandleOnValidBaseAbilitySubmit" style="margin-bottom: 10px">
             <BSFormGroup Class="col-md-8">
                 <BSBasicInput Id="baseAbility"
                               InputType="InputType.Select"
                               @bind-Value="Helper.FormString"
-                              style="width: 80%; margin-right: 20px;">
+                              style="width: 75%; margin-right: 20px;">
                     <option value="">Select Ability</option>
                     @foreach (var ability in BaseAbilities)
                             {
@@ -192,10 +192,12 @@ else
                             }
                 </BSBasicInput>
                 <BSButton Id="formSubmit"
+                          Class="btn-specialize"
                           Color="BlazorStrap.Color.Primary"
                           ButtonType="ButtonType.Submit"
                           style="margin-right: 20px;">Add</BSButton>
                 <BSButton Id="baseAbilityDetails"
+                          Class="btn-specialize"
                           ButtonType="ButtonType.Button"
                           OnClick="(() => OnBaseAbilityToggleOn(BaseAbilities.FirstOrDefault(a => a.Id == Int32.Parse(Helper.FormString))))"
                           IsDisabled="string.IsNullOrWhiteSpace(Helper.FormString)">Description</BSButton>
@@ -203,52 +205,39 @@ else
         </BSForm>
         @if (ThisCharacter.PlayerAbilities.Count > 0)
         {
-            <BSForm Model="ThisPlayerAbility" OnValidSubmit="HandleOnValidPlayerAbilitySubmit" IsInline="true">
-                <BSTable class="col-md-8">
-                    <thead>
-                        <tr>
-                            <th scope="col" style="width: 40%; font-size: 18px;">Ability</th>
-                            <th style="width: 15%; font-size: 18px;">Tier</th>
-                            <th style="width: 40%; font-size: 18px;">Notes</th>
-                            <th style="width: 5%"></th>
-                        </tr>
-                    </thead>
-                    @foreach (var ability in ThisCharacter.PlayerAbilities)
-                    {
-                        <tbody>
+            <div class="skills-table-wrapper col-md-8">
+                <div class="abilities-table">
+                    <table>
+                        @foreach (var ability in ThisCharacter.PlayerAbilities)
+                        {
+                            <tbody>
                             <tr>
-                                <th scope="row" style="width: 30%; font-size: 18px; padding: 15px 0;"
-                                    @onclick="@(() => OnBaseAbilityToggleOn(ability.BaseAbility))">@ability.BaseAbility.ShortName (@ability.AddedUsingBaseAttributeCode)</th>
-                                <td>
-                                    <BSButton Color="Color.Danger" @onclick="(()=>HandleDecreasePlayerAbility(ability))"> -</BSButton>
-                                    <BSInput InputType="InputType.Number"
-                                             Class="text-center"
-                                             IsDisabled="true"
-                                             @bind-Value="ability.Tier"
-                                             style="width: 55px;" />
-                                    <BSButton Color="Color.Success" @onclick="(()=>HandleIncreasePlayerAbility(ability))">+</BSButton>
+                                <td class="ability-text" @onclick="@(() => OnBaseAbilityToggleOn(ability.BaseAbility))">@ability.BaseAbility.ShortName (@ability.AddedUsingBaseAttributeCode)</td>
+                                <td class="ability-control">
+                                    <div class="quantity">
+                                        <button class="btn" @onclick="(()=>HandleDecreasePlayerAbility(ability))">&lt;</button>
+                                        <input type="number" class="quantity" disabled @bind-value="@ability.Tier" />
+                                        <button class="btn" @onclick="(()=>HandleIncreasePlayerAbility(ability))">&gt;</button>
+                                    </div>
                                 </td>
-                                <td>
-                                    <InputText class="form-control"
-                                               style="width:90%;"
-                                               @bind-Value="@ability.Notes" />
+                                <td class="ability-text ability-notes">
+                                    <input type="text" class="form-control" size="60" width="300px" placeholder="Notes" @bind-value="@ability.Notes" />
                                 </td>
-                                <td>
-                                    <BSButton ButtonType="ButtonType.Button"
-                                              @onclick="(() => DeletePlayerAbility(ability))"
-                                              Class="btn-danger">X</BSButton>
+                                <td class="ability-button">
+                                    <button class="ability-delete" @onclick="(() => DeletePlayerAbility(ability))">X</button>
                                 </td>
                             </tr>
-                        </tbody>
-                    }
-                </BSTable>
-            </BSForm>
+                            </tbody>
+                        }
+                    </table>
+                </div>
+            </div>
         }
 
         @if (AddSkills == false)
         {
             <div class="text-centered col-md-8">
-                <BSButton style="width: 45%" @onclick="HandleToggleSkills">Continue</BSButton>
+                <BSButton class="btn btn-specialize" style="width: 45%" @onclick="HandleToggleSkills">Continue</BSButton>
             </div>
         }
         else
@@ -413,57 +402,57 @@ else
             </div>
         }
         @if (ThisCharacter.SpecializedPlayerSkills.Count > 0)
-            {
-                <h4 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-subcategory">Specialized Skills</h4>
+        {
+            <h4 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-subcategory">Specialized Skills</h4>
 
-                <div class="skills-table-wrapper col-md-8">
-                    <div class="skills-table">
-                        <table>
-                            <tbody>
-                            @foreach (var skill in SpecializedSkillsLeftTable)
-                            {
-                                <tr>
-                                    <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.Specialty</td>
-                                    <td>
-                                        <div class="quantity">
-                                            <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
-                                            <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
-                                            <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-specialize" @onclick="(()=>HandleRemovePlayerSkill(skill))">Remove</button>
-                                    </td>
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="skills-table">
-                        <table>
-                            <tbody>
-                            @foreach (var skill in SpecializedSkillsRightTable)
-                            {
-                                <tr>
-                                    <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.Specialty</td>
-                                    <td>
-                                        <div class="quantity">
-                                            <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
-                                            <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
-                                            <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-specialize" @onclick="(()=>HandleRemovePlayerSkill(skill))">Remove</button>
-                                    </td>
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="skills-table-wrapper col-md-8">
+                <div class="skills-table">
+                    <table>
+                        <tbody>
+                        @foreach (var skill in SpecializedSkillsLeftTable)
+                        {
+                            <tr>
+                                <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.Specialty</td>
+                                <td>
+                                    <div class="quantity">
+                                        <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                        <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                        <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-specialize" @onclick="(() => HandleRemovePlayerSkill(skill))">Remove</button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
                 </div>
-
-            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Training Values</h2>
+                <div class="skills-table">
+                    <table>
+                        <tbody>
+                        @foreach (var skill in SpecializedSkillsRightTable)
+                        {
+                            <tr>
+                                <td @onclick="(() => OnBaseSkillToggleOn(skill.BaseSkill))">@skill.Specialty</td>
+                                <td>
+                                    <div class="quantity">
+                                        <button class="btn" @onclick="(() => HandleDecreasePlayerSkill(skill))">&lt;</button>
+                                        <input type="number" class="quantity" disabled @bind-value="@skill.Value"/>
+                                        <button class="btn" @onclick="(() => HandleIncreasePlayerSkill(skill))">&gt;</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-specialize" @onclick="(() => HandleRemovePlayerSkill(skill))">Remove</button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">Training Values</h2>
             <div class="card-columns col-md-8">
                 @foreach (var value in ThisCharacter.TrainingValues)
                 {
@@ -475,7 +464,6 @@ else
                     </BSCard>
                 }
             </div>
-        }
     }
 
     <BSModal @ref="CharacterSheetModal" IsFullScreen="true">
