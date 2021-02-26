@@ -92,80 +92,62 @@ else
                 </BSCol>
             </BSRow>
             <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">S.P.E.W Attributes</h2>
-                <div class="outbreak-resources">
-                    <div class="outbreak-resource-child">
-                        <label for="strength" class="outbreak-label">Strength (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points)</label>
-                        <div class="quantity" id="strength">
-                            <button class="btn" @onclick="@(()=>HandleDecreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength")))">&lt;</button>
-                            <input type="number" class="quantity" disabled @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Value" />
-                            <button class="btn" @onclick="@(() => HandleIncreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength")))">&gt;</button>
-                        </div>
+            <div class="outbreak-resources col-md-8">
+                <div class="outbreak-resource-child">
+                    <label for="strength" class="outbreak-label">Strength</label>
+                    <div class="quantity" id="strength">
+                        <button class="btn" @onclick="@(()=>HandleDecreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength")))">&lt;</button>
+                        <input type="number" class="quantity" disabled @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Value" />
+                        <button class="btn" @onclick="@(() => HandleIncreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength")))">&gt;</button>
                     </div>
+                    <label for="strength" class="outbreak-label">Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points</label>
                 </div>
+                <div class="outbreak-resource-child">
+                    <label for="perception" class="outbreak-label">Perception</label>
+                    <div class="quantity" id="perception">
+                        <button class="btn" @onclick="@(()=>HandleDecreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception")))">&lt;</button>
+                        <input type="number" class="quantity" disabled @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Value" />
+                        <button class="btn" @onclick="@(() => HandleIncreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception")))">&gt;</button>
+                    </div>
+                    <label for="perception" class="outbreak-label">Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points</label>
+                </div>
+                <div class="outbreak-resource-child">
+                    <label for="empathy" class="outbreak-label">Empathy</label>
+                    <div class="quantity" id="empathy">
+                        <button class="btn" @onclick="@(()=>HandleDecreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy")))">&lt;</button>
+                        <input type="number" class="quantity" disabled @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Value" />
+                        <button class="btn" @onclick="@(() => HandleIncreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy")))">&gt;</button>
+                    </div>
+                    <label for="empathy" class="outbreak-label">Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points</label>
+                </div>
+                <div class="outbreak-resource-child">
+                    <label for="willpower" class="outbreak-label">Willpower</label>
+                    <div class="quantity" id="willpower">
+                        <button class="btn" @onclick="@(()=>HandleDecreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower")))">&lt;</button>
+                        <input type="number" class="quantity" disabled @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Value" />
+                        <button class="btn" @onclick="@(() => HandleIncreasePlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower")))">&gt;</button>
+                    </div>
+                    <label for="willpower" class="outbreak-label">Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points</label>
+                </div>
+            </div>
 
-            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">S.P.E.W. Attributes</h2>
-            <BSRow Class="col-md-8" style="margin-bottom: 15px">
-                <BSCol>
-                    <BSLabel For="characterStrength"
-                             style="@HighlightStrength"
-                             @onclick="@OnStrengthToggle">Strength    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points)</BSLabel>
-                            <BSBasicInput Id="characterStrength"
-                                          PlaceHolder="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Value"
-                                          InputType="InputType.Number"
-                                          @bind-Value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Value"
-                                          @onfocus="@(() => InitialValue = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Value)"
-                                          @onclick="@(() => HandleIncrementPlayerAttribute(ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength")))" />
-                        </BSCol>
-                        <BSCol>
-                            <BSLabel For="characterPerception"
-                                     style="@HighlightPerception"
-                                     @onclick="@OnPerceptionToggle">Perception    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points)</BSLabel>
-                                    <BSBasicInput Id="characterPerception"
-                                                  PlaceHolder="@PerceptionService.Value"
-                                                  InputType="InputType.Number"
-                                                  @bind-Value="PerceptionService.Value"
-                                                  @onfocus="(() => InitialValue = PerceptionService.Value)"
-                                                  @onclick="(() => HandleIncrementPlayerAttribute(PerceptionService))" />
-                                </BSCol>
-                                <BSCol>
-                                    <BSLabel For="characterEmpathy"
-                                             style="@HighlightEmpathy"
-                                             @onclick="@OnEmpathyToggle">Empathy    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points)</BSLabel>
-                                            <BSBasicInput Id="characterEmpathy"
-                                                          PlaceHolder="@EmpathyService.Value"
-                                                          InputType="InputType.Number"
-                                                          @bind-Value="EmpathyService.Value"
-                                                          @onfocus="(() => InitialValue = EmpathyService.Value)"
-                                                          @onclick="(() => HandleIncrementPlayerAttribute(EmpathyService))" />
-                                        </BSCol>
-                                        <BSCol>
-                                            <BSLabel For="characterWillpower"
-                                                     style="@HighlightWillpower"
-                                                     @onclick="@OnWillpowerToggle">Willpower    (Points: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points)</BSLabel>
-                                                    <BSBasicInput Id="characterWillpower"
-                                                                  PlaceHolder="@WillpowerService.Value"
-                                                                  InputType="InputType.Number"
-                                                                  @bind-Value="WillpowerService.Value"
-                                                                  @onfocus="(() => InitialValue = WillpowerService.Value)"
-                                                                  @onclick="(() => HandleIncrementPlayerAttribute(WillpowerService))" />
-                                                </BSCol>
-                                            </BSRow>
-                                            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Character Resources</h2>
-                                            <BSRow Class="col-md-8" style="margin-bottom: 15px">
-                                                <BSCol>
-                                                    <BSLabel For="survivalPoints" @onclick="ToggleSurvivalPointsDescription">Survival Points</BSLabel>
-                                                    <BSBasicInput Id="survivalPoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.SurvivalPoints" @bind-Value="ThisCharacter.SurvivalPoints" />
-                                                </BSCol>
-                                                <BSCol>
-                                                    <BSLabel For="gestaltLevel" style="@HighlightGestalt" @onclick="ToggleGestaltDescription">Gestalt Level</BSLabel>
-                                                    <BSBasicInput Id="gestaltLevel" InputType="InputType.Number" PlaceHolder="@ThisCharacter.GestaltLevel" @bind-Value="ThisCharacter.GestaltLevel"></BSBasicInput>
-                                                </BSCol>
-                                                <BSCol>
-                                                    <BSLabel For="competencePoints" @onclick="ToggleCompetencePointsDescription">Competence Points</BSLabel>
-                                                    <BSBasicInput Id="competencePoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.CompetencePoints" @bind-Value="ThisCharacter.CompetencePoints"></BSBasicInput>
-                                                </BSCol>
-                                            </BSRow>
-                                        </BSFormGroup>
+            
+                <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Character Resources</h2>
+                <BSRow Class="col-md-8" style="margin-bottom: 15px">
+                    <BSCol>
+                        <BSLabel For="survivalPoints" @onclick="ToggleSurvivalPointsDescription">Survival Points</BSLabel>
+                        <BSBasicInput Id="survivalPoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.SurvivalPoints" @bind-Value="ThisCharacter.SurvivalPoints" />
+                    </BSCol>
+                    <BSCol>
+                        <BSLabel For="gestaltLevel" style="@HighlightGestalt" @onclick="ToggleGestaltDescription">Gestalt Level</BSLabel>
+                        <BSBasicInput Id="gestaltLevel" InputType="InputType.Number" PlaceHolder="@ThisCharacter.GestaltLevel" @bind-Value="ThisCharacter.GestaltLevel"></BSBasicInput>
+                    </BSCol>
+                    <BSCol>
+                        <BSLabel For="competencePoints" @onclick="ToggleCompetencePointsDescription">Competence Points</BSLabel>
+                        <BSBasicInput Id="competencePoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.CompetencePoints" @bind-Value="ThisCharacter.CompetencePoints"></BSBasicInput>
+                    </BSCol>
+                </BSRow>
+            </BSFormGroup>
 
         @if (AddAbilities == false)
         {

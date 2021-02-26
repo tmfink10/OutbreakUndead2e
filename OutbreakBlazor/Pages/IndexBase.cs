@@ -290,134 +290,27 @@ namespace OutbreakBlazor.Pages
             }
         }
 
-        protected async Task<PlayerAttribute> HandleIncrementPlayerAttribute(PlayerAttribute attribute)
-        {
-            var rand = new Random();
-            var inListAttribute =
-                ThisCharacter.PlayerAttributes.FirstOrDefault(a =>
-                    a.BaseAttribute.Name == attribute.BaseAttribute.Name);
-            var valueToRemove = 0;
-
-            if (InitialValue < attribute.Value)
-            {
-                var advanceValue = rand.Next(1, 4);
-                ThisCharacter.GestaltLevel -= InitialValue / 10;
-                attribute.Value = InitialValue + advanceValue;
-                inListAttribute.Value = attribute.Value;
-                attribute.AdvancementValues.Add(advanceValue);
-                inListAttribute.AdvancementValues = attribute.AdvancementValues;
-                if (attribute.Points < attribute.Bonus)
-                {
-                    attribute.Points = attribute.Bonus;
-                    inListAttribute.Points = inListAttribute.Bonus;
-                    if (ThisCharacter.PlayerAbilities != null)
-                    {
-                        foreach (var ability in ThisCharacter.PlayerAbilities)
-                        {
-                            if (ability.AddedUsingBaseAttributeCode == attribute.BaseAttribute.Name)
-                            {
-                                attribute.Points -= 1;
-                                inListAttribute.Points -= 1;
-                            }
-                        }
-                    }
-
-                }
-            }
-            else if (InitialValue > attribute.Value)
-            {
-                if (attribute.AdvancementValues.Count > 0)
-                {
-                    valueToRemove = attribute.AdvancementValues[^1];
-                    attribute.Value = InitialValue - valueToRemove;
-                    inListAttribute.Value = attribute.Value;
-                    attribute.AdvancementValues.Remove(attribute.AdvancementValues[^1]);
-                    inListAttribute.AdvancementValues = attribute.AdvancementValues;
-                    ThisCharacter.GestaltLevel += attribute.Bonus;
-                }
-                if (attribute.Bonus < InitialValue / 10)
-                {
-                    attribute.Points -= 1;
-                    inListAttribute.Points -= 1;
-                }
-
-            }
-            else
-            {
-                attribute.Value = InitialValue;
-                inListAttribute.Value = InitialValue;
-            }
-
-            if (inListAttribute.Id == 0)
-            {
-                return await PlayerAttributeService.CreatePlayerAttribute(inListAttribute);
-            }
-
-            foreach (var skill in ThisCharacter.PlayerSkills)
-            {
-                var primaryAttribute = BaseAttributes.FirstOrDefault(a => a.Id == skill.BaseSkill.PrimaryAttributeBaseAttributeId);
-                var secondaryAttribute = BaseAttributes.FirstOrDefault(a => a.Id == skill.BaseSkill.SecondaryAttributeBaseAttributeId);
-
-                if (primaryAttribute.Name == attribute.BaseAttribute.Name)
-                {
-                    if (skill.BaseSkill.Type == "Basic" || skill.BaseSkill.Type == "Trained")
-                    {
-                        if (InitialValue < attribute.Value)
-                        {
-                            skill.Value += attribute.AdvancementValues[^1];
-                        }
-                        else
-                        {
-                            skill.Value -= valueToRemove;
-                        }
-                    }
-
-                    else if (skill.BaseSkill.Type == "Expert")
-                    {
-                        if (InitialValue / 10 > attribute.Value / 10)
-                        {
-                            skill.Value -= 1;
-                        }
-                        else if (InitialValue / 10 < attribute.Value / 10)
-                        {
-                            skill.Value += 1;
-                        }
-                    }
-                }
-                else if (secondaryAttribute.Name == attribute.BaseAttribute.Name)
-                {
-                    if (InitialValue / 10 > attribute.Value / 10)
-                    {
-                        skill.Value -= 1;
-                    }
-                    else if (InitialValue / 10 < attribute.Value / 10)
-                    {
-                        skill.Value += 1;
-                    }
-                }
-            }
-
-            if (attribute.Points < 0)
-            {
-                HighlightAttribute(attribute);
-            }
-            else if (attribute.Points >= 0)
-            {
-                ClearHighlightAttribute(attribute);
-            }
-
-            InitialValue = attribute.Value;
-            return await PlayerAttributeService.UpdatePlayerAttribute(inListAttribute.Id, inListAttribute);
-        }
-
         protected async Task<PlayerAttribute> HandleIncreasePlayerAttribute(PlayerAttribute attribute)
         {
             var initialValue = attribute.Value;
             var rand = new Random();
             var advanceValue = rand.Next(1, 4);
 
+            if (initialValue == 45)
+            {
+                AddToActionsLog($"{attribute.BaseAttribute.Name} already advanced to maximum value of 45");
+                return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
+            }
+
             ThisCharacter.GestaltLevel -= initialValue / 10;
             attribute.Value += advanceValue;
+            if (attribute.Value > 45)
+            {
+                advanceValue = attribute.Value - 45;
+                attribute.Value = 45;
+                AddToActionsLog($"{attribute.BaseAttribute.Name} value adjusted down to maximum value of 45");
+            }
+
             attribute.AdvancementValues.Add(advanceValue);
 
             if (initialValue / 10 < attribute.Value / 10)
@@ -463,21 +356,24 @@ namespace OutbreakBlazor.Pages
                 ClearHighlightAttribute(attribute);
             }
 
+            AddToActionsLog($"Result(D3): +{advanceValue} to {attribute.BaseAttribute.Name}");
+            AddToActionsLog($"Spent {initialValue/10} Gestalt to advance {attribute.BaseAttribute.Name}");
+
             return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
         }
 
         protected async Task<PlayerAttribute> HandleDecreasePlayerAttribute(PlayerAttribute attribute)
         {
             var initialValue = attribute.Value;
-            var rand = new Random();
             var valueToRemove = 0;
 
             if (attribute.AdvancementValues.Count > 0)
             {
                 valueToRemove = attribute.AdvancementValues[^1];
                 attribute.Value -= valueToRemove;
-                attribute.AdvancementValues.Remove(attribute.AdvancementValues[^1]);
-                ThisCharacter.GestaltLevel += attribute.Bonus;
+                attribute.AdvancementValues.RemoveAt(attribute.AdvancementValues.Count-1);
+                ThisCharacter.GestaltLevel += attribute.Value/10;
+
             }
             else
             {
@@ -518,6 +414,9 @@ namespace OutbreakBlazor.Pages
                     }
                 }
             }
+
+            AddToActionsLog($"{attribute.BaseAttribute.Name} value reduced by {valueToRemove} to {attribute.Value}");
+            AddToActionsLog($"Refunded {attribute.Value/10} Gestalt");
 
             return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
         }
