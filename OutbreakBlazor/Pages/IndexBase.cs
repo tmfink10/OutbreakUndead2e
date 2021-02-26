@@ -60,12 +60,21 @@ namespace OutbreakBlazor.Pages
         protected bool AddAbilities;
         protected bool AddSkills;
         protected bool HasInstruction;
-        protected bool SeparatorReady;
         protected int InitialValue;
         protected int FinalValue;
         protected int Delta;
-        protected int Timer;
         protected List<string> ActionsLog = new List<string>();
+        protected List<PlayerSkill> BasicSkills = new List<PlayerSkill>();
+        protected List<PlayerSkill> BasicSkillsLeftTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> BasicSkillsRightTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> TrainedSkills = new List<PlayerSkill>();
+        protected List<PlayerSkill> TrainedSkillsLeftTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> TrainedSkillsRightTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> ExpertSkills = new List<PlayerSkill>();
+        protected List<PlayerSkill> ExpertSkillsLeftTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> ExpertSkillsRightTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> SpecializedSkillsLeftTable = new List<PlayerSkill>();
+        protected List<PlayerSkill> SpecializedSkillsRightTable = new List<PlayerSkill>();
 
         protected override async Task OnInitializedAsync()
         {
@@ -200,101 +209,113 @@ namespace OutbreakBlazor.Pages
             ThisCharacter = await PlayerCharacterService.CreatePlayerCharacter(ThisCharacter);
         }
 
+        protected void DoNothing()
+        {
+            return;
+        }
         protected async Task<PlayerCharacter> HandleOnValidPlayerCharacterSubmit()
         {
-            //Sync the attribute services with the attributes in the list
-            //Sync Strength
-            var strength = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength");
-            strength.Value = StrengthService.Value;
-            strength.Points = StrengthService.Points;
-            strength.Notes = StrengthService.Notes;
-            //Sync Perception
-            var perception = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception");
-            perception.Value = PerceptionService.Value;
-            perception.Points = PerceptionService.Points;
-            perception.Notes = PerceptionService.Notes;
-            //Sync Empathy
-            var empathy = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy");
-            empathy.Value = EmpathyService.Value;
-            empathy.Points = EmpathyService.Points;
-            empathy.Notes = EmpathyService.Notes;
-            //Sync Willpower
-            var willpower = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower");
-            willpower.Value = WillpowerService.Value;
-            willpower.Points = WillpowerService.Points;
-            willpower.Notes = WillpowerService.Notes;
-            //Update secondary characteristics
-            ThisCharacter.DamageThreshold = strength.Bonus + willpower.Bonus;
-            ThisCharacter.Morale = empathy.Bonus + willpower.Bonus;
-            ThisCharacter.CargoCapacity = strength.Bonus;
-
+            SortSkills();
+            
             AddAbilities = true;
 
             return await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
         }
 
-        protected async Task<PlayerAttribute> HandleIncrementPlayerAttribute(PlayerAttribute attribute)
+        protected void SortSkills()
         {
+            BasicSkills = BasicSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+            TrainedSkills = TrainedSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+            ExpertSkills = ExpertSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+
+            foreach (var skill in ThisCharacter.PlayerSkills)
+            {
+                if (skill.BaseSkill.Type == "Expert")
+                {
+                    ExpertSkills.Add(skill);
+                }
+                if (skill.BaseSkill.Type == "Trained")
+                {
+                    TrainedSkills.Add(skill);
+                }
+                if (skill.BaseSkill.Type == "Basic")
+                {
+                    BasicSkills.Add(skill);
+                }
+            }
+
+            var counter = 0;
+            foreach (var skill in BasicSkills)
+            {
+                if (counter <= BasicSkills.Count / 2 && counter * 2 != BasicSkills.Count)
+                {
+                    BasicSkillsLeftTable.Add(skill);
+                }
+                else
+                {
+                    BasicSkillsRightTable.Add(skill);
+                }
+
+                counter++;
+            }
+
+            counter = 0;
+            foreach (var skill in TrainedSkills)
+            {
+                if (counter <= TrainedSkills.Count / 2 && counter * 2 != TrainedSkills.Count)
+                {
+                    TrainedSkillsLeftTable.Add(skill);
+                }
+                else
+                {
+                    TrainedSkillsRightTable.Add(skill);
+                }
+
+                counter++;
+            }
+
+            counter = 0;
+            foreach (var skill in ExpertSkills)
+            {
+                if (counter <= ExpertSkills.Count / 2 && counter * 2 != ExpertSkills.Count)
+                {
+                    ExpertSkillsLeftTable.Add(skill);
+                }
+                else
+                {
+                    ExpertSkillsRightTable.Add(skill);
+                }
+
+                counter++;
+            }
+        }
+
+        protected async Task<PlayerAttribute> HandleIncreasePlayerAttribute(PlayerAttribute attribute)
+        {
+            var initialValue = attribute.Value;
             var rand = new Random();
-            var inListAttribute =
-                ThisCharacter.PlayerAttributes.FirstOrDefault(a =>
-                    a.BaseAttribute.Name == attribute.BaseAttribute.Name);
-            var valueToRemove = 0;
+            var advanceValue = rand.Next(1, 4);
 
-            if (InitialValue < attribute.Value)
+            if (initialValue == 45)
             {
-                var advanceValue = 0;
-                advanceValue = rand.Next(1, 4);
-                ThisCharacter.GestaltLevel -= InitialValue / 10;
-                attribute.Value = InitialValue + advanceValue;
-                inListAttribute.Value = attribute.Value;
-                attribute.AdvancementValues.Add(advanceValue);
-                inListAttribute.AdvancementValues = attribute.AdvancementValues;
-                if (attribute.Points < attribute.Bonus)
-                {
-                    attribute.Points = attribute.Bonus;
-                    inListAttribute.Points = inListAttribute.Bonus;
-                    if (ThisCharacter.PlayerAbilities != null)
-                    {
-                        foreach (var ability in ThisCharacter.PlayerAbilities)
-                        {
-                            if (ability.AddedUsingBaseAttributeCode == attribute.BaseAttribute.Name)
-                            {
-                                attribute.Points -= 1;
-                                inListAttribute.Points -= 1;
-                            }
-                        }
-                    }
-
-                }
-            }
-            else if (InitialValue > attribute.Value)
-            {
-                if (attribute.AdvancementValues.Count > 0)
-                {
-                    valueToRemove = attribute.AdvancementValues[^1];
-                    attribute.Value = InitialValue - valueToRemove;
-                    inListAttribute.Value = attribute.Value;
-                    attribute.AdvancementValues.Remove(attribute.AdvancementValues[^1]);
-                    inListAttribute.AdvancementValues = attribute.AdvancementValues;
-                    ThisCharacter.GestaltLevel += attribute.Bonus;
-                }
-                if (attribute.Bonus < InitialValue / 10)
-                {
-                    attribute.Points -= 1;
-                    inListAttribute.Points -= 1;
-                }
-
-            }
-            else
-            {
-                attribute.Value = InitialValue;
-                inListAttribute.Value = InitialValue;
+                AddToActionsLog($"{attribute.BaseAttribute.Name} already advanced to maximum value of 45");
+                return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
             }
 
-            if (inListAttribute.Id == 0)
+            ThisCharacter.GestaltLevel -= initialValue / 10;
+            attribute.Value += advanceValue;
+            if (attribute.Value > 45)
             {
-                return await PlayerAttributeService.CreatePlayerAttribute(inListAttribute);
+                advanceValue = attribute.Value - 45;
+                attribute.Value = 45;
+                AddToActionsLog($"{attribute.BaseAttribute.Name} value adjusted down to maximum value of 45");
+            }
+
+            attribute.AdvancementValues.Add(advanceValue);
+
+            if (initialValue / 10 < attribute.Value / 10)
+            {
+                attribute.Points += 1;
             }
 
             foreach (var skill in ThisCharacter.PlayerSkills)
@@ -306,23 +327,12 @@ namespace OutbreakBlazor.Pages
                 {
                     if (skill.BaseSkill.Type == "Basic" || skill.BaseSkill.Type == "Trained")
                     {
-                        if (InitialValue < attribute.Value)
-                        {
-                            skill.Value += attribute.AdvancementValues[^1];
-                        }
-                        else
-                        {
-                            skill.Value -= valueToRemove;
-                        }
+                        skill.Value += attribute.AdvancementValues[^1];
                     }
 
                     else if (skill.BaseSkill.Type == "Expert")
                     {
-                        if (InitialValue / 10 > attribute.Value / 10)
-                        {
-                            skill.Value -= 1;
-                        }
-                        else if (InitialValue / 10 < attribute.Value / 10)
+                        if (initialValue / 10 < attribute.Value / 10)
                         {
                             skill.Value += 1;
                         }
@@ -330,11 +340,7 @@ namespace OutbreakBlazor.Pages
                 }
                 else if (secondaryAttribute.Name == attribute.BaseAttribute.Name)
                 {
-                    if (InitialValue / 10 > attribute.Value / 10)
-                    {
-                        skill.Value -= 1;
-                    }
-                    else if (InitialValue / 10 < attribute.Value / 10)
+                    if (initialValue / 10 < attribute.Value / 10)
                     {
                         skill.Value += 1;
                     }
@@ -350,8 +356,70 @@ namespace OutbreakBlazor.Pages
                 ClearHighlightAttribute(attribute);
             }
 
-            InitialValue = attribute.Value;
-            return await PlayerAttributeService.UpdatePlayerAttribute(inListAttribute.Id, inListAttribute);
+            AddToActionsLog($"Result(D3): +{advanceValue} to {attribute.BaseAttribute.Name}");
+            AddToActionsLog($"Spent {initialValue/10} Gestalt to advance {attribute.BaseAttribute.Name}");
+
+            return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
+        }
+
+        protected async Task<PlayerAttribute> HandleDecreasePlayerAttribute(PlayerAttribute attribute)
+        {
+            var initialValue = attribute.Value;
+            var valueToRemove = 0;
+
+            if (attribute.AdvancementValues.Count > 0)
+            {
+                valueToRemove = attribute.AdvancementValues[^1];
+                attribute.Value -= valueToRemove;
+                attribute.AdvancementValues.RemoveAt(attribute.AdvancementValues.Count-1);
+                ThisCharacter.GestaltLevel += attribute.Value/10;
+
+                AddToActionsLog($"{attribute.BaseAttribute.Name} value reduced by {valueToRemove} to {attribute.Value}");
+                AddToActionsLog($"Refunded {attribute.Value / 10} Gestalt");
+
+            }
+            else
+            {
+                valueToRemove = 1;
+                attribute.Value -= valueToRemove;
+                AddToActionsLog($"{attribute.BaseAttribute.Name} value reduced by 1 to {attribute.Value}");
+            }
+
+            if (attribute.Value/10 < initialValue / 10)
+            {
+                attribute.Points -= 1;
+            }
+
+            foreach (var skill in ThisCharacter.PlayerSkills)
+            {
+                var primaryAttribute = BaseAttributes.FirstOrDefault(a => a.Id == skill.BaseSkill.PrimaryAttributeBaseAttributeId);
+                var secondaryAttribute = BaseAttributes.FirstOrDefault(a => a.Id == skill.BaseSkill.SecondaryAttributeBaseAttributeId);
+
+                if (primaryAttribute.Name == attribute.BaseAttribute.Name)
+                {
+                    if (skill.BaseSkill.Type == "Basic" || skill.BaseSkill.Type == "Trained")
+                    {
+                        skill.Value -= valueToRemove;
+                    }
+
+                    else if (skill.BaseSkill.Type == "Expert")
+                    {
+                        if (attribute.Value / 10 < initialValue / 10)
+                        {
+                            skill.Value -= 1;
+                        }
+                    }
+                }
+                else if (secondaryAttribute.Name == attribute.BaseAttribute.Name)
+                {
+                    if (attribute.Value / 10 < initialValue / 10)
+                    {
+                        skill.Value -= 1;
+                    }
+                }
+            }
+
+            return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
         }
 
         protected async Task HandleOnValidBaseAbilitySubmit()
@@ -445,96 +513,9 @@ namespace OutbreakBlazor.Pages
             }
         }
 
-        protected async Task<PlayerAbility> HandleOnValidPlayerAbilitySubmit()
-        {
-            Delta = FinalValue - InitialValue;
-            UpdateGestalt();
-            return await PlayerAbilityService.UpdatePlayerAbility(ThisPlayerAbility.Id, ThisPlayerAbility);
-        }
-
-        protected async Task<PlayerAbility> HandleIncrementPlayerAbility(PlayerAbility ability)
-        {
-            if (ability.Tier == 6)
-            {
-                ability.Tier = 5;
-                return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
-            }
-
-            if (ability.Tier > InitialValue)
-            {
-                onPlayerAbilitySpendSelectionToggleOn(ability);
-
-                if (ThisCharacter.TrainingValues != null)
-                {
-                    foreach (var trainingValue in ThisCharacter.TrainingValues)
-                    {
-                        foreach (var baseTrainingValue in ability.BaseAbility.ModifiesBaseTrainingValues)
-                        {
-                            if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
-                            {
-                                trainingValue.Value += 1;
-                            }
-                        }
-                    }
-                }
-            }
-            else if (ability.Tier < InitialValue)
-            {
-                if (ability.Tier == 0)
-                {
-                    ability.Tier = 1;
-                    return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
-                }
-
-                if (ability.AdvancedUsing.Count > 0)
-                {
-                    if (ability.AdvancedUsing[^1] == "gestalt")
-                    {
-                        ThisCharacter.GestaltLevel += (ability.Tier + 1);
-                        ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
-                    }
-
-                    else if (ability.AdvancedUsing[^1] == "gestaltDouble")
-                    {
-                        ThisCharacter.GestaltLevel += (ability.Tier + 1)*2;
-                        ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
-                    }
-
-                    else if (ability.AdvancedUsing[^1] == "points" || ability.AdvancedUsing[^1] == "pointsDouble")
-                    {
-                        ThisCharacter.PlayerAttributes.FirstOrDefault(a =>
-                            a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode).Points += 1;
-                        ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
-                    }
-                }
-                
-                
-                if (ThisCharacter.TrainingValues != null)
-                {
-                    foreach (var trainingValue in ThisCharacter.TrainingValues)
-                    {
-                        foreach (var baseTrainingValue in ability.BaseAbility.ModifiesBaseTrainingValues)
-                        {
-                            if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
-                            {
-                                trainingValue.Value -= 1;
-                            }
-                        }
-                    }
-                }
-            }
-
-            InitialValue = ability.Tier;
-
-            return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
-        }
-
         protected async Task<PlayerAbility> HandleIncreasePlayerAbility(PlayerAbility ability)
         {
-            AddToActionsLog("<div align=\"center\"><b>^---- Increase Ability ----^</b></div>");
-
-            var attribute = ThisCharacter.PlayerAttributes
-                .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+            AddToActionsLog($"<div align=\"center\"><b>^---- Increase {ability.BaseAbility.ShortName} Value ----^</b></div>");
 
             if (ability.Tier == 5)
             {
@@ -566,7 +547,7 @@ namespace OutbreakBlazor.Pages
 
         protected async Task<PlayerAbility> HandleDecreasePlayerAbility(PlayerAbility ability)
         {
-            AddToActionsLog("<div align=\"center\"><b>^---- Decrease Ability ----^</b></div>");
+            AddToActionsLog($"<div align=\"center\"><b>^---- Decrease {ability.BaseAbility.ShortName} Value ----^</b></div>");
             var attribute = ThisCharacter.PlayerAttributes
                 .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
@@ -637,7 +618,7 @@ namespace OutbreakBlazor.Pages
 
             for (int i = ability.AdvancedUsing.Count-1; i > -1; i--)
             {
-                if (ability.AdvancedUsing[i] == "Gestalt")
+                if (ability.AdvancedUsing[i] == "gestalt")
                 {
                     if (i == 0)
                     {
@@ -695,7 +676,20 @@ namespace OutbreakBlazor.Pages
 
         protected void InitializePlayerSkills(BaseSkill skill)
         {
-            var playerSkill = new PlayerSkill();
+            var playerSkill = new PlayerSkill(){BaseSkill = skill};
+
+            if (skill.Name == "Diplomacy <Barter/Bribe>" ||
+                skill.Name == "Diplomacy <Command>" ||
+                skill.Name == "Diplomacy <Determine Motives>" ||
+                skill.Name == "Diplomacy <Intimidate>" ||
+                skill.Name == "Diplomacy <Persuade>")
+            {
+                var specialty = skill.Name.Remove(0, 11);
+                specialty = specialty.Remove(specialty.Length - 1);
+                playerSkill.Specialty = specialty;
+                playerSkill.IsSpecialized = true;
+            }
+
             if (skill.Type == "Expert")
             {
                 if (skill.PrimaryAttributeBaseAttributeId == 1 || skill.SecondaryAttributeBaseAttributeId == 1)
@@ -721,6 +715,7 @@ namespace OutbreakBlazor.Pages
                     playerSkill.Value += WillpowerService.Bonus;
                     playerSkill.AttributeValue += WillpowerService.Bonus;
                 }
+
             }
             else
             {
@@ -771,226 +766,25 @@ namespace OutbreakBlazor.Pages
                     playerSkill.Value += WillpowerService.Bonus;
                     playerSkill.AttributeValue += WillpowerService.Bonus;
                 }
-            }
 
-            playerSkill.BaseSkill = skill;
-
-            if (skill.Name == "Diplomacy <Barter/Bribe>" || 
-                skill.Name == "Diplomacy <Command>" || 
-                skill.Name == "Diplomacy <Determine Motives>" || 
-                skill.Name == "Diplomacy <Intimidate>" || 
-                skill.Name == "Diplomacy <Persuade>")
-            {
-                var specialty = skill.Name.Remove(0, 11);
-                specialty = specialty.Remove(specialty.Length - 1);
-                playerSkill.Specialty = specialty;
-                playerSkill.IsSpecialized = true;
             }
 
             ThisCharacter.PlayerSkills.Add(playerSkill);
         }
 
-        protected async Task<PlayerSkill> HandleIncrementPlayerSkill(PlayerSkill skill)
-        {
-            if (skill.Advancements < 0)
-            {
-                skill.Advancements = 0;
-                skill.Value = InitialValue;
-            }
-            if (skill.Value > InitialValue)
-            {
-                var totalAdvancement = 0;
-
-                if (skill.BaseSkill.Type == "Basic")
-                {
-                    if (skill.IsSupported)
-                    {
-                        var roll = RollD5("Highest");
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        foreach (var ability in ThisCharacter.PlayerAbilities)
-                        {
-                            foreach (var playerSkill in ability.SupportsPlayerSkills)
-                            {
-                                if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                {
-                                    if (ability.BaseAbility.AdvancesSkills)
-                                    {
-                                        totalAdvancement += ability.Tier;
-                                    }
-                                }
-                            }
-                        }
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    else
-                    {
-                        var roll = RollD5();
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        skill.Value = InitialValue + roll;
-                        skill.AdvancementsList.Add(roll);
-                    }
-                }
-
-                else if (skill.BaseSkill.Type == "Trained")
-                {
-                    if (skill.IsSpecialized)
-                    {
-                        var roll = RollD5("Highest");
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        if (skill.IsSupported)
-                        {
-                            foreach (var ability in ThisCharacter.PlayerAbilities)
-                            {
-                                foreach (var playerSkill in ability.SupportsPlayerSkills)
-                                {
-                                    if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                    {
-                                        if (ability.BaseAbility.AdvancesSkills)
-                                        {
-                                            totalAdvancement += ability.Tier;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    else if (skill.IsSupported)
-                    {
-                        var roll = RollD5();
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        foreach (var ability in ThisCharacter.PlayerAbilities)
-                        {
-                            foreach (var playerSkill in ability.SupportsPlayerSkills)
-                            {
-                                if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                {
-                                    if (ability.BaseAbility.AdvancesSkills)
-                                    {
-                                        totalAdvancement += ability.Tier;
-                                    }
-                                }
-                            }
-                        }
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    else
-                    {
-                        var roll = RollD5("Lowest");
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        skill.Value = InitialValue + roll;
-                        skill.AdvancementsList.Add(roll);
-                    }
-                }
-
-                else if (skill.BaseSkill.Type == "Expert")
-                {
-                    if (skill.IsSpecialized)
-                    {
-                        var roll = RollD5();
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        if (skill.IsSupported)
-                        {
-                            foreach (var ability in ThisCharacter.PlayerAbilities)
-                            {
-                                foreach (var playerSkill in ability.SupportsPlayerSkills)
-                                {
-                                    if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                    {
-                                        if (ability.BaseAbility.AdvancesSkills)
-                                        {
-                                            totalAdvancement += ability.Tier;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    if (skill.IsSupported)
-                    {
-                        var roll = RollD5("Lowest");
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        foreach (var ability in ThisCharacter.PlayerAbilities)
-                        {
-                            foreach (var playerSkill in ability.SupportsPlayerSkills)
-                            {
-                                if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                {
-                                    if (ability.BaseAbility.AdvancesSkills)
-                                    {
-                                        totalAdvancement += ability.Tier;
-                                    }
-                                }
-                            }
-                        }
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    else
-                    {
-                        skill.Value = InitialValue;
-                    }
-                }
-
-                if (skill.Advancements > 5)
-                {
-                    var lastAdvancement = skill.AdvancementsList[^1];
-                    ThisCharacter.GestaltLevel += 1;
-                    skill.Advancements -= 1;
-                    skill.Value -= lastAdvancement;
-                    skill.AdvancementsList.Remove(skill.AdvancementsList[^1]);
-                }
-            }
-
-            else if (skill.Value < InitialValue && skill.AdvancementsList.Count != 0)
-            {
-                var lastAdvancement = skill.AdvancementsList[^1];
-                ThisCharacter.GestaltLevel += 1;
-                skill.Advancements -= 1;
-                skill.Value = InitialValue - lastAdvancement;
-                skill.AdvancementsList.Remove(skill.AdvancementsList[^1]);
-            }
-
-            else
-            {
-                skill.Value = InitialValue;
-            }
-
-            InitialValue = skill.Value;
-
-            return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
-        }
-
         protected async Task<PlayerSkill> HandleIncreasePlayerSkill(PlayerSkill skill)
         {
-            AddToActionsLog("<div align=\"center\"><b>^---- Increase Skill ----^</b></div>");
+            AddToActionsLog($"<div align=\"center\"><b>^---- Increase {skill.BaseSkill.ShortName} Value ----^</b></div>");
 
             InitialValue = skill.Value;
-
+            
             var totalAdvancement = 0;
 
             if (skill.AdvancementsList.Count==5)
             {
                 AddToActionsLog($"{skill.BaseSkill.Name} already advanced 5 times. Further advancement prohibited.");
                 return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+                //PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
             }
 
             if (skill.BaseSkill.Type == "Basic")
@@ -1113,6 +907,7 @@ namespace OutbreakBlazor.Pages
                 {
                     AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is neither specialized nor supported. Advancement is prohibited.");
                     return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+                    //return await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
                 }
 
                 totalAdvancement += roll;
@@ -1204,7 +999,7 @@ namespace OutbreakBlazor.Pages
         protected async Task<PlayerSkill> HandleDecreasePlayerSkill(PlayerSkill skill)
         {
 
-            AddToActionsLog("<div align=\"center\"><b>^---- Decrease Skill Value ----^</b></div>");
+            AddToActionsLog($"<div align=\"center\"><b>^---- Decrease {skill.BaseSkill.ShortName} Value ----^</b></div>");
 
             InitialValue = skill.Value;
 
@@ -1237,6 +1032,7 @@ namespace OutbreakBlazor.Pages
                 Advancements = skill.Advancements,
                 AdvancementsList = skill.AdvancementsList,
                 PlayerCharacter = skill.PlayerCharacter,
+                PlayerCharacterId = skill.PlayerCharacterId,
                 Notes = skill.Notes,
                 AttributeValue = skill.AttributeValue,
                 IsSpecialized = true
@@ -1355,36 +1151,6 @@ namespace OutbreakBlazor.Pages
             }
         }
 
-        protected void UpdateGestalt()
-        {
-            var positiveCounter = 0;
-            var negativeCounter = 0;
-
-            while (Delta > 0)
-            {
-                InitialValue++;
-                positiveCounter += InitialValue;
-                Delta--;
-            }
-
-            while (Delta < 0)
-            {
-                negativeCounter -= InitialValue;
-                InitialValue--;
-                Delta++;
-            }
-
-            if (positiveCounter > 0)
-            {
-                ThisCharacter.GestaltLevel -= positiveCounter;
-            }
-            else
-            {
-                ThisCharacter.GestaltLevel -= negativeCounter;
-            }
-
-        }
-
         protected void HandleToggleSkills()
         {
             AddSkills = !AddSkills;
@@ -1441,6 +1207,8 @@ namespace OutbreakBlazor.Pages
         protected BSModal CharacterSheetModal { get; set; }
         protected void ToggleCharacterSheetModal(MouseEventArgs e)
         {
+            PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
+
             GeneratePdf();
             CharacterSheetModal.Toggle();
         }
@@ -1723,9 +1491,18 @@ namespace OutbreakBlazor.Pages
                     }
                 }
 
-                newPlayerSkill = await PlayerSkillService.CreatePlayerSkill(newPlayerSkill);
+                await PlayerSkillService.CreatePlayerSkill(newPlayerSkill);
 
                 ThisCharacter.SpecializedPlayerSkills.Add(newPlayerSkill);
+
+                if (SpecializedSkillsLeftTable.Count <= SpecializedSkillsRightTable.Count)
+                {
+                    SpecializedSkillsLeftTable.Add(newPlayerSkill);
+                }
+                else
+                {
+                    SpecializedSkillsRightTable.Add(newPlayerSkill);
+                }
 
                 AddToActionsLog($"<div align=\"center\"><b>^---- Specialize {ThisPlayerSkill.BaseSkill.Name} in {ThisPlayerSkill.Specialty} ----^</b></div>");
                 AddToActionsLog($"-{newPlayerSkill.AdvancementsList.Count} Gestalt to create {newPlayerSkill.BaseSkill.Name} ({newPlayerSkill.Specialty}) ");
@@ -1738,6 +1515,9 @@ namespace OutbreakBlazor.Pages
             }
 
             SpecializePlayerSkill.Toggle();
+
+            //await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
+
         }
 
         protected Array CsvStringToArray(string values)
@@ -1796,27 +1576,6 @@ namespace OutbreakBlazor.Pages
             }
 
             return skill.Value.ToString();
-        }
-
-        protected string GetPlayerSkillSpecialtyByBaseSkillName(string baseSkillName, bool specialized = false)
-        {
-            PlayerSkill skill;
-
-            if (specialized)
-            {
-                skill = ThisCharacter.SpecializedPlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
-            }
-            else
-            {
-                skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
-            }
-
-            if (skill == null || skill.Value == 0)
-            {
-                return "";
-            }
-
-            return skill.Notes.ToString();
         }
 
         protected string GetPlayerTrainingValueValueByBaseTrainingValueName(string baseTrainingValueName)

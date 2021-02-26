@@ -1,11 +1,274 @@
 @import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
+table {
+    table-layout: fixed;
+}
+
+td {
+    width: 180px;
+    align-items: center;
+    font-size: 1.4rem;
+}
+
+th {
+    width: 160px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.quantity {
+    display: flex;
+    width: 1px;
+    align-items: center;
+}
+
+    /* it will support chrome and firefox */
+    .quantity input[type="number"]::-webkit-inner-spin-button,
+    .quantity input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+    }
+
+    .quantity input {
+        width: 50px;
+        padding: 0.5em;
+        font-size: 1.2rem;
+        text-align: center;
+        font-weight: 900;
+        background-color: rgba(0, 0, 0, 0);
+    }
+
+    .quantity button {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        text-align: center;
+        font-weight: 900;
+        border: 1px solid #aaa;
+        border-radius: 20px;
+    }
+
+    .quantity input {
+        border: none;
+    }
+
+.outbreak-header {
+    font-size: 3.6rem;
+}
+
+.outbreak-category {
+    font-size: 2.6rem;
+}
+
+.outbreak-subcategory {
+    font-size: 1.8rem;
+}
+
+.outbreak-label {
+    font-size: 1.4rem;
+    text-align: center;
+    width: 160px;
+}
+
+.outbreak-resources {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-evenly;
+}
+
+.outbreak-resource-child {
+    align-items: center;
+}
+
+
+
+.skills-table {
+    padding: 10px;
+    display: inline-block;
+    
+}
+
+.skills-table-wrapper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-evenly;
+}
+
+.abilities-table {
+    padding: 10px;
+    display: inline-block;
+}
+
+.ability-text {
+    width: 800px;
+}
+
+.ability-control {
+    width: 160px;
+}
+
+.ability-button {
+    width: 50px%;
+}
+
+.ability-delete {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    text-align: center;
+    font-weight: 900;
+    border: 0;
+    border-radius: 20px;
+    transition: opacity 0.15s;
+    opacity: 0.75;
+    background: radial-gradient(rgb(204, 204, 204), rgb(189, 17, 26) 99%);
+    color: #ffffff;
+    margin-left: 5rem;
+}
+
+    .ability-delete:focus {
+        border: none;
+        outline: none;
+    }
+
+    .ability-delete:active {
+        background-position-y: 1px;
+        box-shadow: inset 0 2px 12px -4px rgb(0, 0, 0);
+    }
+
+    .ability-delete:hover {
+        opacity: 1;
+    }
+
+.ability-notes {
+    padding-left: 5rem;
+}
+
+.btn-specialize {
+    font-size: 1.2rem;
+    color: #ffffff;
+    background: linear-gradient(rgb(204, 204, 204), rgb(85, 85, 85) 99%);
+    transition: opacity 0.15s;
+    opacity: 0.75;
+}
+
+    .btn-specialize:focus {
+        border: none;
+        outline: none;
+    }
+
+    .btn-specialize:active {
+        background-position-y: 1px;
+        box-shadow: inset 0 2px 12px -4px rgb(0, 0, 0);
+    }
+
+    .btn-specialize:hover {
+        opacity: 1;
+    }
+
+.quantity {
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    width: 160px;
+}
+
+    /* it will support chrome and firefox */
+    .quantity input[type="number"]::-webkit-inner-spin-button,
+    .quantity input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+    }
+
+    .quantity input {
+        width: 60px;
+        font-size: 1.6rem;
+        text-align: center;
+        font-weight: 900;
+        background-color: rgba(0, 0, 0, 0);
+        border: none;
+    }
+
+    .quantity button {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        text-align: center;
+        font-weight: 900;
+        border: 0;
+        border-radius: 20px;
+        transition: opacity 0.15s;
+        opacity: 0.75;
+        background: radial-gradient(rgb(204, 204, 204), rgb(85, 85, 85) 99%);
+        color: #ffffff;
+        margin-top: 0.5em;
+    }
+
+        .quantity button:focus {
+            border: none;
+            outline: none;
+        }
+
+        .quantity button:active {
+            background-position-y: 1px;
+            box-shadow: inset 0 2px 12px -4px rgb(0, 0, 0);
+        }
+
+        .quantity button:hover {
+            opacity: 1;
+        }
+
+    .quantity input {
+        border-left: none;
+        border-right: none;
+    }
+
+.btn-decrement {
+    background: rgb(212, 188, 188);
+    color: #ffffff;
+}
+
+.btn-increment {
+    background: rgb(201, 214, 208);
+    color: #ffffff;
+}
+
+.btn-prize {
+    font-size: 1.2rem;
+    color: white;
+    /*background: linear-gradient(rgb(252, 246, 56), rgb(161, 157, 35) 99%);*/
+    background: linear-gradient(#ffffff, rgb(189, 43, 32), black); 
+    transition: opacity 0.15s;
+    opacity: 0.75;
+    height: 50px;
+    width: 250px;
+    font-size: 1.4em;
+}
+
+.btn-prize:focus {
+    border: none;
+    outline: none;
+}
+
+.btn-prize:active {
+    background-position-y: 1px;
+    box-shadow: inset 0 2px 12px -4px rgb(0, 0, 0);
+}
+
+    .btn-prize:hover {
+        opacity: 1;
+        color: rgb(245, 242, 56);
+        box-shadow: 2px 2px 25px rgb(245, 242, 56);
+    }
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 a, .btn-link {
     color: #0366d6;
+}
+
+.outbreak-wide {
+    width: 250px;
 }
 
 .btn-primary {
@@ -42,12 +305,12 @@ a, .btn-link {
     z-index: 1000;
 }
 
-#blazor-error-ui .dismiss {
-    cursor: pointer;
-    position: absolute;
-    right: 0.75rem;
-    top: 0.5rem;
-}
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
 
 .hidden {
     display: none;
@@ -74,4 +337,18 @@ a, .btn-link {
 
 .text-centered {
     text-align: center;
+}
+
+div .outbreak-gradient {
+    background-image: linear-gradient(#ffffff, rgb(189, 43, 32) 20%, black 50% )
+}
+
+.outbreak-sidebar-spew {
+    text-align: center;
+    width: 40px;
+    font-size: 1.6rem;
+}
+
+.outbreak-red {
+    color: rgb(189, 43, 32);
 }

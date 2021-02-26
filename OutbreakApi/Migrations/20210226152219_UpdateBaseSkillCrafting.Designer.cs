@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OutbreakApi.Data;
 
 namespace OutbreakApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210226152219_UpdateBaseSkillCrafting")]
+    partial class UpdateBaseSkillCrafting
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1858,7 +1860,7 @@ namespace OutbreakApi.Migrations
                     b.Property<int?>("PlayerAbilityId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PlayerCharacterId")
+                    b.Property<int?>("PlayerCharacterId")
                         .HasColumnType("int");
 
                     b.Property<int?>("PlayerCharacterId1")
@@ -2000,9 +2002,7 @@ namespace OutbreakApi.Migrations
 
                     b.HasOne("OutbreakModels.Models.PlayerCharacter", "PlayerCharacter")
                         .WithMany("PlayerSkills")
-                        .HasForeignKey("PlayerCharacterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("PlayerCharacterId");
 
                     b.HasOne("OutbreakModels.Models.PlayerCharacter", null)
                         .WithMany("SpecializedPlayerSkills")
