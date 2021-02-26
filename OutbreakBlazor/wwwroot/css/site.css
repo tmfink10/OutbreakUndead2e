@@ -5,7 +5,7 @@ table {
 }
 
 td {
-    width: 160px;
+    width: 180px;
     align-items: center;
     font-size: 1.4rem;
 }
@@ -79,17 +79,18 @@ th {
     align-items: center;
 }
 
+
+
 .skills-table {
     padding: 10px;
     display: inline-block;
-    margin-right: 125px;
-    margin-left: 25px;
+    
 }
 
 .skills-table-wrapper {
     display: flex;
     align-items: flex-start;
-    justify-content: flex-start;
+    justify-content: space-evenly;
 }
 
 .abilities-table {
@@ -232,6 +233,10 @@ html, body {
 
 a, .btn-link {
     color: #0366d6;
+}
+
+.outbreak-wide {
+    width: 250px;
 }
 
 .btn-primary {

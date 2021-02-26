@@ -131,22 +131,35 @@ else
                 </div>
             </div>
 
+            <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">Character Resources</h2>
+            <div class="outbreak-resources col-md-8">
+                <div class="outbreak-resource-child">
+                    <label for="strength" class="outbreak-label outbreak-wide">Survival Points</label>
+                    <div class="quantity outbreak-wide" id="strength">
+                        <button class="btn" @onclick="@(()=>ThisCharacter.SurvivalPoints -= 1)">&lt;</button>
+                        <input type="number" class="quantity" style="width: 90px" @bind-value="@ThisCharacter.SurvivalPoints" />
+                        <button class="btn" @onclick="@(() => ThisCharacter.SurvivalPoints += 1)">&gt;</button>
+                    </div>
+                </div>
+                <div class="outbreak-resource-child">
+                    <label for="strength" class="outbreak-label outbreak-wide">Gestalt Level</label>
+                    <div class="quantity outbreak-wide" id="strength">
+                        <button class="btn" @onclick="@(()=>ThisCharacter.GestaltLevel -= 1)">&lt;</button>
+                        <input type="number" class="quantity" style="width: 90px" @bind-value="@ThisCharacter.GestaltLevel" />
+                        <button class="btn" @onclick="@(() => ThisCharacter.GestaltLevel += 1)">&gt;</button>
+                    </div>
+                </div>
+                <div class="outbreak-resource-child">
+                    <label for="strength" class="outbreak-label outbreak-wide">Competence Points</label>
+                    <div class="quantity outbreak-wide" id="strength">
+                        <button class="btn" @onclick="@(()=>ThisCharacter.CompetencePoints -= 1)">&lt;</button>
+                        <input type="number" class="quantity" style="width: 90px" @bind-value="@ThisCharacter.CompetencePoints" />
+                        <button class="btn" @onclick="@(() => ThisCharacter.CompetencePoints += 1)">&gt;</button>
+                    </div>
+                </div>
+            </div>
             
-                <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8">Character Resources</h2>
-                <BSRow Class="col-md-8" style="margin-bottom: 15px">
-                    <BSCol>
-                        <BSLabel For="survivalPoints" @onclick="ToggleSurvivalPointsDescription">Survival Points</BSLabel>
-                        <BSBasicInput Id="survivalPoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.SurvivalPoints" @bind-Value="ThisCharacter.SurvivalPoints" />
-                    </BSCol>
-                    <BSCol>
-                        <BSLabel For="gestaltLevel" style="@HighlightGestalt" @onclick="ToggleGestaltDescription">Gestalt Level</BSLabel>
-                        <BSBasicInput Id="gestaltLevel" InputType="InputType.Number" PlaceHolder="@ThisCharacter.GestaltLevel" @bind-Value="ThisCharacter.GestaltLevel"></BSBasicInput>
-                    </BSCol>
-                    <BSCol>
-                        <BSLabel For="competencePoints" @onclick="ToggleCompetencePointsDescription">Competence Points</BSLabel>
-                        <BSBasicInput Id="competencePoints" InputType="InputType.Number" PlaceHolder="@ThisCharacter.CompetencePoints" @bind-Value="ThisCharacter.CompetencePoints"></BSBasicInput>
-                    </BSCol>
-                </BSRow>
+                
             </BSFormGroup>
 
         @if (AddAbilities == false)

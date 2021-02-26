@@ -374,11 +374,15 @@ namespace OutbreakBlazor.Pages
                 attribute.AdvancementValues.RemoveAt(attribute.AdvancementValues.Count-1);
                 ThisCharacter.GestaltLevel += attribute.Value/10;
 
+                AddToActionsLog($"{attribute.BaseAttribute.Name} value reduced by {valueToRemove} to {attribute.Value}");
+                AddToActionsLog($"Refunded {attribute.Value / 10} Gestalt");
+
             }
             else
             {
                 valueToRemove = 1;
                 attribute.Value -= valueToRemove;
+                AddToActionsLog($"{attribute.BaseAttribute.Name} value reduced by 1 to {attribute.Value}");
             }
 
             if (attribute.Value/10 < initialValue / 10)
@@ -415,11 +419,9 @@ namespace OutbreakBlazor.Pages
                 }
             }
 
-            AddToActionsLog($"{attribute.BaseAttribute.Name} value reduced by {valueToRemove} to {attribute.Value}");
-            AddToActionsLog($"Refunded {attribute.Value/10} Gestalt");
-
             return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
         }
+
         protected async Task HandleOnValidBaseAbilitySubmit()
         {
             if (!string.IsNullOrEmpty(Helper.FormString))
@@ -516,83 +518,6 @@ namespace OutbreakBlazor.Pages
             Delta = FinalValue - InitialValue;
             UpdateGestalt();
             return await PlayerAbilityService.UpdatePlayerAbility(ThisPlayerAbility.Id, ThisPlayerAbility);
-        }
-
-        protected async Task<PlayerAbility> HandleIncrementPlayerAbility(PlayerAbility ability)
-        {
-            if (ability.Tier == 6)
-            {
-                ability.Tier = 5;
-                return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
-            }
-
-            if (ability.Tier > InitialValue)
-            {
-                onPlayerAbilitySpendSelectionToggleOn(ability);
-
-                if (ThisCharacter.TrainingValues != null)
-                {
-                    foreach (var trainingValue in ThisCharacter.TrainingValues)
-                    {
-                        foreach (var baseTrainingValue in ability.BaseAbility.ModifiesBaseTrainingValues)
-                        {
-                            if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
-                            {
-                                trainingValue.Value += 1;
-                            }
-                        }
-                    }
-                }
-            }
-            else if (ability.Tier < InitialValue)
-            {
-                if (ability.Tier == 0)
-                {
-                    ability.Tier = 1;
-                    return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
-                }
-
-                if (ability.AdvancedUsing.Count > 0)
-                {
-                    if (ability.AdvancedUsing[^1] == "gestalt")
-                    {
-                        ThisCharacter.GestaltLevel += (ability.Tier + 1);
-                        ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
-                    }
-
-                    else if (ability.AdvancedUsing[^1] == "gestaltDouble")
-                    {
-                        ThisCharacter.GestaltLevel += (ability.Tier + 1)*2;
-                        ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
-                    }
-
-                    else if (ability.AdvancedUsing[^1] == "points" || ability.AdvancedUsing[^1] == "pointsDouble")
-                    {
-                        ThisCharacter.PlayerAttributes.FirstOrDefault(a =>
-                            a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode).Points += 1;
-                        ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
-                    }
-                }
-                
-                
-                if (ThisCharacter.TrainingValues != null)
-                {
-                    foreach (var trainingValue in ThisCharacter.TrainingValues)
-                    {
-                        foreach (var baseTrainingValue in ability.BaseAbility.ModifiesBaseTrainingValues)
-                        {
-                            if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
-                            {
-                                trainingValue.Value -= 1;
-                            }
-                        }
-                    }
-                }
-            }
-
-            InitialValue = ability.Tier;
-
-            return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
         }
 
         protected async Task<PlayerAbility> HandleIncreasePlayerAbility(PlayerAbility ability)
@@ -852,195 +777,6 @@ namespace OutbreakBlazor.Pages
             }
 
             ThisCharacter.PlayerSkills.Add(playerSkill);
-        }
-
-        protected async Task<PlayerSkill> HandleIncrementPlayerSkill(PlayerSkill skill)
-        {
-            if (skill.Advancements < 0)
-            {
-                skill.Advancements = 0;
-                skill.Value = InitialValue;
-            }
-            if (skill.Value > InitialValue)
-            {
-                var totalAdvancement = 0;
-
-                if (skill.BaseSkill.Type == "Basic")
-                {
-                    if (skill.IsSupported)
-                    {
-                        var roll = RollD5("Highest");
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        foreach (var ability in ThisCharacter.PlayerAbilities)
-                        {
-                            foreach (var playerSkill in ability.SupportsPlayerSkills)
-                            {
-                                if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                {
-                                    if (ability.BaseAbility.AdvancesSkills)
-                                    {
-                                        totalAdvancement += ability.Tier;
-                                    }
-                                }
-                            }
-                        }
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    else
-                    {
-                        var roll = RollD5();
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        skill.Value = InitialValue + roll;
-                        skill.AdvancementsList.Add(roll);
-                    }
-                }
-
-                else if (skill.BaseSkill.Type == "Trained")
-                {
-                    if (skill.IsSpecialized)
-                    {
-                        var roll = RollD5("Highest");
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        if (skill.IsSupported)
-                        {
-                            foreach (var ability in ThisCharacter.PlayerAbilities)
-                            {
-                                foreach (var playerSkill in ability.SupportsPlayerSkills)
-                                {
-                                    if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                    {
-                                        if (ability.BaseAbility.AdvancesSkills)
-                                        {
-                                            totalAdvancement += ability.Tier;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    else if (skill.IsSupported)
-                    {
-                        var roll = RollD5();
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        foreach (var ability in ThisCharacter.PlayerAbilities)
-                        {
-                            foreach (var playerSkill in ability.SupportsPlayerSkills)
-                            {
-                                if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                {
-                                    if (ability.BaseAbility.AdvancesSkills)
-                                    {
-                                        totalAdvancement += ability.Tier;
-                                    }
-                                }
-                            }
-                        }
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    else
-                    {
-                        var roll = RollD5("Lowest");
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        skill.Value = InitialValue + roll;
-                        skill.AdvancementsList.Add(roll);
-                    }
-                }
-
-                else if (skill.BaseSkill.Type == "Expert")
-                {
-                    if (skill.IsSpecialized)
-                    {
-                        var roll = RollD5();
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        if (skill.IsSupported)
-                        {
-                            foreach (var ability in ThisCharacter.PlayerAbilities)
-                            {
-                                foreach (var playerSkill in ability.SupportsPlayerSkills)
-                                {
-                                    if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                    {
-                                        if (ability.BaseAbility.AdvancesSkills)
-                                        {
-                                            totalAdvancement += ability.Tier;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    if (skill.IsSupported)
-                    {
-                        var roll = RollD5("Lowest");
-                        ThisCharacter.GestaltLevel -= 1;
-                        skill.Advancements += 1;
-                        totalAdvancement += roll;
-                        foreach (var ability in ThisCharacter.PlayerAbilities)
-                        {
-                            foreach (var playerSkill in ability.SupportsPlayerSkills)
-                            {
-                                if (playerSkill.BaseSkill.Name == skill.BaseSkill.Name)
-                                {
-                                    if (ability.BaseAbility.AdvancesSkills)
-                                    {
-                                        totalAdvancement += ability.Tier;
-                                    }
-                                }
-                            }
-                        }
-                        skill.Value = InitialValue + totalAdvancement;
-                        skill.AdvancementsList.Add(totalAdvancement);
-                    }
-                    else
-                    {
-                        skill.Value = InitialValue;
-                    }
-                }
-
-                if (skill.Advancements > 5)
-                {
-                    var lastAdvancement = skill.AdvancementsList[^1];
-                    ThisCharacter.GestaltLevel += 1;
-                    skill.Advancements -= 1;
-                    skill.Value -= lastAdvancement;
-                    skill.AdvancementsList.Remove(skill.AdvancementsList[^1]);
-                }
-            }
-
-            else if (skill.Value < InitialValue && skill.AdvancementsList.Count != 0)
-            {
-                var lastAdvancement = skill.AdvancementsList[^1];
-                ThisCharacter.GestaltLevel += 1;
-                skill.Advancements -= 1;
-                skill.Value = InitialValue - lastAdvancement;
-                skill.AdvancementsList.Remove(skill.AdvancementsList[^1]);
-            }
-
-            else
-            {
-                skill.Value = InitialValue;
-            }
-
-            InitialValue = skill.Value;
-
-            return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
         }
 
         protected async Task<PlayerSkill> HandleIncreasePlayerSkill(PlayerSkill skill)
@@ -1871,27 +1607,6 @@ namespace OutbreakBlazor.Pages
             }
 
             return skill.Value.ToString();
-        }
-
-        protected string GetPlayerSkillSpecialtyByBaseSkillName(string baseSkillName, bool specialized = false)
-        {
-            PlayerSkill skill;
-
-            if (specialized)
-            {
-                skill = ThisCharacter.SpecializedPlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
-            }
-            else
-            {
-                skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == baseSkillName);
-            }
-
-            if (skill == null || skill.Value == 0)
-            {
-                return "";
-            }
-
-            return skill.Notes.ToString();
         }
 
         protected string GetPlayerTrainingValueValueByBaseTrainingValueName(string baseTrainingValueName)
