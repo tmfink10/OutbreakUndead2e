@@ -1150,36 +1150,6 @@ namespace OutbreakBlazor.Pages
             }
         }
 
-        protected void UpdateGestalt()
-        {
-            var positiveCounter = 0;
-            var negativeCounter = 0;
-
-            while (Delta > 0)
-            {
-                InitialValue++;
-                positiveCounter += InitialValue;
-                Delta--;
-            }
-
-            while (Delta < 0)
-            {
-                negativeCounter -= InitialValue;
-                InitialValue--;
-                Delta++;
-            }
-
-            if (positiveCounter > 0)
-            {
-                ThisCharacter.GestaltLevel -= positiveCounter;
-            }
-            else
-            {
-                ThisCharacter.GestaltLevel -= negativeCounter;
-            }
-
-        }
-
         protected void HandleToggleSkills()
         {
             AddSkills = !AddSkills;
@@ -1236,6 +1206,8 @@ namespace OutbreakBlazor.Pages
         protected BSModal CharacterSheetModal { get; set; }
         protected void ToggleCharacterSheetModal(MouseEventArgs e)
         {
+            PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
+
             GeneratePdf();
             CharacterSheetModal.Toggle();
         }

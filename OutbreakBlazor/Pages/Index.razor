@@ -7,7 +7,7 @@
 
 @if (CreateNew == false)
 {
-    <h1 style="margin-bottom: 20px">Outbreak Undead 2e: Character Creator</h1>
+    <h1 style="margin-bottom: 20px" class="outbreak-header">Outbreak Undead 2e: Character Creator</h1>
 
     <p>
         Welcome to the character creator section. Character creation happens in three phases: <br />
@@ -58,13 +58,63 @@ else
                 <button class="btn btn-prize" style="width: 250px; height: 50px;" @onclick="ToggleCharacterSheetModal">Generate Character</button>
             </div>
         }
-        <h2 align="center">Resources</h2><br />
-        <h3 style="@HighlightStrength">Strength: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points</h3>
-        <h3 style="@HighlightPerception">Perception: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points</h3>
-        <h3 style="@HighlightEmpathy">Empathy: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points</h3>
-        <h3 style="@HighlightWillpower">Willpower: @ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points</h3>
-        <h3 style ="@HighlightGestalt">Gestalt: @ThisCharacter.GestaltLevel</h3><br />
-        <h2 align="center">Log</h2>
+        <h2 align="center" class="outbreak-red" style="font-weight: bold">Resources</h2><br />
+        <div class="outbreak-resources">
+            <div class="outbreak-resource-child">
+                <label class="outbreak-sidebar-spew outbreak-red" style="font-weight: bold">S</label>
+                <div class="quantity outbreak-sidebar-spew">
+                    <input type="number" 
+                           class="quantity outbreak-sidebar-spew" 
+                           style="@HighlightStrength" 
+                           disabled 
+                           @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Strength").Points" />
+                </div>
+            </div>
+            <div class="outbreak-resource-child">
+                <label class="outbreak-sidebar-spew outbreak-red" style="font-weight: bold">P</label>
+                <div class="quantity outbreak-sidebar-spew">
+                    <input type="number" 
+                           class="quantity outbreak-sidebar-spew" 
+                           disabled  
+                           style="@HighlightPerception" 
+                           @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Perception").Points" />
+                </div>
+            </div>
+            <div class="outbreak-resource-child">
+                <label class="outbreak-sidebar-spew outbreak-red" style="font-weight: bold">E</label>
+                <div class="quantity outbreak-sidebar-spew">
+                    <input type="number" 
+                           class="quantity outbreak-sidebar-spew" 
+                           disabled 
+                           style="@HighlightEmpathy"
+                           @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Empathy").Points" />
+                </div>
+            </div>
+            <div class="outbreak-resource-child">
+                <label class="outbreak-sidebar-spew outbreak-red" style="font-weight: bold">W</label>
+                <div class="quantity outbreak-sidebar-spew">
+                    <input type="number" 
+                           class="quantity outbreak-sidebar-spew" 
+                           disabled 
+                           style="@HighlightWillpower"
+                           @bind-value="@ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == "Willpower").Points" />
+                </div>
+            </div>
+        </div>
+        <div class="outbreak-resources">
+            <div class="outbreak-resource-child">
+                <label class="outbreak-red outbreak-sidebar-spew" style="width: 160px; font-weight: bold">Gestalt</label>
+                <div class="quantity" >
+                    <input type="number"
+                           class="quantity"
+                           disabled
+                           style="@HighlightGestalt"
+                           @bind-value="@ThisCharacter.GestaltLevel" />
+                </div>
+            </div>
+        </div>
+
+        <h2 align="center" class="outbreak-red" style="font-weight: bold">Log</h2>
         @foreach(var action in ActionsLog)
         {
             <span>@((MarkupString)action)</span><br />
@@ -73,10 +123,10 @@ else
     </div>
 
 
-    <h1 style="margin-bottom: 60px" align="center" class="col-md-8">Outbreak Undead 2e: Character Creator</h1>
+    <h1 style="margin-bottom: 60px" align="center" class="col-md-8 outbreak-header">Outbreak Undead 2e: Character Creator</h1>
     <EditForm Model="ThisCharacter" OnValidSubmit="DoNothing" style="margin-bottom: 15px">
         <BSFormGroup>
-            <h2 style="margin-bottom: 10px" align="center" class="col-md-8">Basic Information</h2>
+            <h2 style="margin-bottom: 10px" align="center" class="col-md-8 outbreak-category">Basic Information</h2>
             <BSRow Class="col-md-8" style="margin-bottom: 5px">
                 <BSCol style="width: 40%">
                     <BSLabel For="characterFirstName">First Name</BSLabel>
