@@ -1032,6 +1032,7 @@ namespace OutbreakBlazor.Pages
                 Advancements = skill.Advancements,
                 AdvancementsList = skill.AdvancementsList,
                 PlayerCharacter = skill.PlayerCharacter,
+                PlayerCharacterId = skill.PlayerCharacterId,
                 Notes = skill.Notes,
                 AttributeValue = skill.AttributeValue,
                 IsSpecialized = true
@@ -1490,6 +1491,8 @@ namespace OutbreakBlazor.Pages
                     }
                 }
 
+                await PlayerSkillService.CreatePlayerSkill(newPlayerSkill);
+
                 ThisCharacter.SpecializedPlayerSkills.Add(newPlayerSkill);
 
                 if (SpecializedSkillsLeftTable.Count <= SpecializedSkillsRightTable.Count)
@@ -1513,7 +1516,7 @@ namespace OutbreakBlazor.Pages
 
             SpecializePlayerSkill.Toggle();
 
-            await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
+            //await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
 
         }
 

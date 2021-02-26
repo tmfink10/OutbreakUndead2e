@@ -24,7 +24,8 @@ namespace OutbreakApi.FluentConfigs
             //Notes intentionally omitted to be nvarchar(max)
 
             builder.HasMany<PlayerSkill>(c => c.PlayerSkills)
-                .WithOne(s => s.PlayerCharacter);
+                .WithOne(s => s.PlayerCharacter)
+                .HasForeignKey(s => s.PlayerCharacterId);
             builder.HasMany<PlayerAbility>(c => c.PlayerAbilities)
                 .WithOne(a => a.PlayerCharacter);
             builder.HasMany<PlayerTrainingValue>(c => c.TrainingValues)

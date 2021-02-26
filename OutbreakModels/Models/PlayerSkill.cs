@@ -7,6 +7,7 @@ namespace OutbreakModels.Models
     public class PlayerSkill
     {
         public int Id { get; set; }
+        public int PlayerCharacterId { get; set; }
         public PlayerCharacter PlayerCharacter { get; set; }
         public BaseSkill BaseSkill { get; set; }
         public int Value { get; set; } = 0;
