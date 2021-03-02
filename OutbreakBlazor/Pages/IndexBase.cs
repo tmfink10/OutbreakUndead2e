@@ -422,6 +422,78 @@ namespace OutbreakBlazor.Pages
             return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
         }
 
+        protected void HandleIncreaseAge()
+        {
+            ThisCharacter.Age++;
+
+            if (ThisCharacter.Age < 36)
+            {
+                ThisCharacter.GestaltLevel++;
+            }
+            else if (ThisCharacter.Age > 35 && ThisCharacter.Age%5 == 0)
+            {
+                ThisCharacter.GestaltLevel++;
+            }
+
+        }
+
+        protected void HandleDecreaseAge()
+        {
+            
+            if (ThisCharacter.Age < 36)
+            {
+                ThisCharacter.GestaltLevel--;
+            }
+            else if (ThisCharacter.Age > 35 && ThisCharacter.Age % 5 == 0)
+            {
+                ThisCharacter.GestaltLevel--;
+            }
+
+            ThisCharacter.Age--;
+        }
+
+        protected void SetAge()
+        {
+            InitialValue = ThisCharacter.Age;
+        }
+        protected void UpdateAge()
+        {
+            var delta = ThisCharacter.Age - InitialValue;
+
+            if (delta > 0)
+            {
+                for (int i = InitialValue; i < Math.Min(ThisCharacter.Age,35); i++)
+                {
+                    ThisCharacter.GestaltLevel++;
+                }
+
+                for (int i = Math.Max(InitialValue,35); i < ThisCharacter.Age; i++)
+                {
+                    if ((i+1) % 5 == 0) 
+                    {
+                        ThisCharacter.GestaltLevel++;
+                    }
+                }
+            }
+
+            if (delta < 0)
+            {
+                for (int i = ThisCharacter.Age; i < Math.Min(InitialValue, 35); i++)
+                {
+                    ThisCharacter.GestaltLevel--;
+                }
+
+                for (int i = Math.Max(ThisCharacter.Age, 35); i < InitialValue; i++)
+                {
+                    if ((i + 1) % 5 == 0)
+                    {
+                        ThisCharacter.GestaltLevel--;
+                    }
+                }
+            }
+            
+        }
+
         protected async Task HandleOnValidBaseAbilitySubmit()
         {
             if (!string.IsNullOrEmpty(Helper.FormString))
@@ -601,6 +673,11 @@ namespace OutbreakBlazor.Pages
             if (attribute.Points >= 0)
             {
                 ClearHighlightAttribute(attribute);
+            }
+
+            if (ThisCharacter.GestaltLevel >= 0)
+            {
+                ClearHighlightGestaltValue();
             }
 
             return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
@@ -905,7 +982,7 @@ namespace OutbreakBlazor.Pages
                 }
                 else
                 {
-                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is neither specialized nor supported. Advancement is prohibited.");
+                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is not supported. Advancement is prohibited.");
                     return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
                     //return await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
                 }
@@ -1021,7 +1098,7 @@ namespace OutbreakBlazor.Pages
             return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
         }
 
-        protected void HandleSpecializeSkill(PlayerSkill skill)
+        protected async Task HandleSpecializeSkill(PlayerSkill skill)
         {
 
             var newPlayerSkill = new PlayerSkill
@@ -1038,6 +1115,8 @@ namespace OutbreakBlazor.Pages
                 IsSpecialized = true
             };
 
+            newPlayerSkill = await PlayerSkillService.CreatePlayerSkill(newPlayerSkill);
+
             ThisCharacter.GestaltLevel -= skill.AdvancementsList.Count;
             
 
@@ -1046,14 +1125,23 @@ namespace OutbreakBlazor.Pages
                 HighlightGestaltValue();
             }
 
-            ThisPlayerSkill = newPlayerSkill;
-
-            OnSpecializePlayerSkillToggleOn(ThisPlayerSkill);
+            OnSpecializePlayerSkillToggleOn(newPlayerSkill);
         }
 
         protected void HandleRemovePlayerSkill(PlayerSkill skill)
         {
             ThisCharacter.SpecializedPlayerSkills.Remove(skill);
+
+            if (SpecializedSkillsLeftTable.Contains(skill))
+            {
+                SpecializedSkillsLeftTable.Remove(skill);
+            }
+
+            if (SpecializedSkillsRightTable.Contains(skill))
+            {
+                SpecializedSkillsRightTable.Remove(skill);
+            }
+
             ThisCharacter.GestaltLevel += skill.AdvancementsList.Count;
             AddToActionsLog($"<div align=\"center\"><b>^---- Remove {skill.BaseSkill.Name} ({skill.Specialty}) ----^</b></div>");
             AddToActionsLog($"+{skill.AdvancementsList.Count} Gestalt for removing {skill.BaseSkill.Name} ({skill.Specialty})");
@@ -1491,7 +1579,7 @@ namespace OutbreakBlazor.Pages
                     }
                 }
 
-                await PlayerSkillService.CreatePlayerSkill(newPlayerSkill);
+                await PlayerSkillService.UpdatePlayerSkill(newPlayerSkill.Id, newPlayerSkill);
 
                 ThisCharacter.SpecializedPlayerSkills.Add(newPlayerSkill);
 
