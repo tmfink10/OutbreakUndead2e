@@ -36,7 +36,7 @@
     },
     {
       "type": "Microsoft.Resources/deployments",
-      "name": "[concat(parameters('resourceGroupName'), 'Deployment', uniqueString(concat('OutbreakApi', subscription().subscriptionId)))]",
+      "name": "[concat(parameters('resourceGroupName'), 'Deployment', uniqueString(concat('OutbreakDb', subscription().subscriptionId)))]",
       "resourceGroup": "[parameters('resourceGroupName')]",
       "apiVersion": "2019-10-01",
       "dependsOn": [
@@ -49,24 +49,25 @@
           "contentVersion": "1.0.0.0",
           "resources": [
             {
-              "name": "OutbreakApi",
-              "type": "Microsoft.ApiManagement/service",
+              "kind": "v12.0",
               "location": "[parameters('resourceLocation')]",
-              "properties": {},
-              "sku": {
-                "name": "Consumption",
-                "capacity": 0
-              },
-              "identity": null,
-              "apiVersion": "2019-12-01"
+              "name": "outbreakundeadsql",
+              "type": "Microsoft.Sql/servers",
+              "apiVersion": "2017-10-01-preview"
             },
             {
-              "type": "Microsoft.ApiManagement/service/apis",
-              "name": "OutbreakApi/OutbreakApi",
-              "properties": {},
-              "apiVersion": "2019-12-01",
+              "sku": {
+                "name": "Basic",
+                "tier": "Basic",
+                "capacity": 5
+              },
+              "kind": "v12.0,user",
+              "location": "[parameters('resourceLocation')]",
+              "name": "outbreakundeadsql/OutbreakDb",
+              "type": "Microsoft.Sql/servers/databases",
+              "apiVersion": "2017-10-01-preview",
               "dependsOn": [
-                "OutbreakApi"
+                "outbreakundeadsql"
               ]
             }
           ]
@@ -75,6 +76,6 @@
     }
   ],
   "metadata": {
-    "_dependencyType": "apis.azure"
+    "_dependencyType": "mssql.azure"
   }
 }

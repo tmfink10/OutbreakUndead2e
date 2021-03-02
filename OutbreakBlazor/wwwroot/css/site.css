@@ -79,7 +79,11 @@ th {
     align-items: center;
 }
 
-
+.outbreak-text {
+    border: 1px solid black;
+    border-radius: 4px;
+    width: 100%;
+}
 
 .skills-table {
     padding: 10px;
