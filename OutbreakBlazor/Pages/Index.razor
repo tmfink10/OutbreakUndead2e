@@ -138,13 +138,20 @@ else
             <label for="age" class="outbreak-label" @onclick="OnStrengthToggle">Age</label>
             <div class="quantity" id="age">
                 <button class="btn" @onclick="@(HandleDecreaseAge)">&lt;</button>
-                <input type="number" class="quantity" @bind-value="@ThisCharacter.Age" @onfocus="(SetAge)" @onblur="(UpdateAge)"/>
+                <input type="number" class="quantity" @bind-value="@ThisCharacter.Age" @onfocus="(SetAge)" @onblur="(UpdateAge)" />
                 <button class="btn" @onclick="@(HandleIncreaseAge)">&gt;</button>
             </div>
         </div>
     </div>
-    
-    <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">S.P.E.W Attributes</h2>
+
+    @if (StartingAttributePoints > 0)
+    {
+        <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">S.P.E.W Attributes<br />(You may allocate @StartingAttributePoints points for free)</h2>
+    }
+    else
+    {
+        <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">S.P.E.W Attributes</h2>
+    }
     <div class="outbreak-resources col-md-8">
         <div class="outbreak-resource-child">
             <label for="strength" class="outbreak-label" @onclick="OnStrengthToggle">Strength</label>
@@ -715,6 +722,45 @@ else
         </BSModalBody>
         <BSModalFooter>
             <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(OnSpecializePlayerSkillToggleOff)">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="SupportBasicSkill" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Support Basic Skill</BSModalHeader>
+        <BSModalBody style="justify-content: space-evenly">
+            @foreach (var skill in Helpers)
+            {
+                <button class="btn btn-specialize @skill.style" style="width: 300px; align-self: center;" @onclick="(()=>OnSelectSkillToSupport(skill))">@skill.name</button><br />
+            }
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportBasicSkillToggleOff)">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="SupportTrainedSkill" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Support Trained Skill</BSModalHeader>
+        <BSModalBody>
+            @foreach (var skill in Helpers)
+            {
+                <button class="btn btn-specialize @skill.style" @onclick="(()=>OnSelectSkillToSupport(skill))">@skill.name</button><br />
+            }
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportTrainedSkillToggleOff)">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="SupportExpertSkill" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Support Trained Skill</BSModalHeader>
+        <BSModalBody>
+            @foreach (var skill in Helpers)
+            {
+                <button class="btn btn-specialize @skill.style" @onclick="(()=>OnSelectSkillToSupport(skill))">@skill.name</button><br />
+            }
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportExpertSkillToggleOff)">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 }

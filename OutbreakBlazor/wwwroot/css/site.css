@@ -356,3 +356,10 @@ div .outbreak-gradient {
 .outbreak-red {
     color: rgb(189, 43, 32);
 }
+
+.selected {
+    color: black;
+    background: linear-gradient(rgb(85, 85, 85), rgb(204, 204, 204) 99%);
+    transition: opacity 0.15s;
+    opacity: 0.75;
+}

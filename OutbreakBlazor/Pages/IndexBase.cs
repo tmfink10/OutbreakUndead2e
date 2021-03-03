@@ -9,6 +9,7 @@ using ceTe.DynamicPDF.Merger;
 using ceTe.DynamicPDF.PageElements;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Cors;
 using OutbreakBlazor.Services;
 using OutbreakModels.Models;
 
@@ -56,13 +57,13 @@ namespace OutbreakBlazor.Pages
         protected string HighlightEmpathy = "";
         protected string HighlightWillpower = "";
         protected string HighlightGestalt = "";
+        protected bool Disable;
         protected bool CreateNew;
         protected bool AddAbilities;
         protected bool AddSkills;
         protected bool HasInstruction;
         protected int InitialValue;
-        protected int FinalValue;
-        protected int Delta;
+        protected int StartingAttributePoints = 0;
         protected List<string> ActionsLog = new List<string>();
         protected List<PlayerSkill> BasicSkills = new List<PlayerSkill>();
         protected List<PlayerSkill> BasicSkillsLeftTable = new List<PlayerSkill>();
@@ -75,6 +76,7 @@ namespace OutbreakBlazor.Pages
         protected List<PlayerSkill> ExpertSkillsRightTable = new List<PlayerSkill>();
         protected List<PlayerSkill> SpecializedSkillsLeftTable = new List<PlayerSkill>();
         protected List<PlayerSkill> SpecializedSkillsRightTable = new List<PlayerSkill>();
+        protected List<HelperClass> Helpers = new List<HelperClass>();
 
         protected override async Task OnInitializedAsync()
         {
@@ -101,6 +103,8 @@ namespace OutbreakBlazor.Pages
 
         public class HelperClass
         {
+            public string name;
+            public string style;
             public string FormString;
         }
 
@@ -222,74 +226,6 @@ namespace OutbreakBlazor.Pages
             return await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
         }
 
-        protected void SortSkills()
-        {
-            BasicSkills = BasicSkills.OrderBy(s => s.BaseSkill.Name).ToList();
-            TrainedSkills = TrainedSkills.OrderBy(s => s.BaseSkill.Name).ToList();
-            ExpertSkills = ExpertSkills.OrderBy(s => s.BaseSkill.Name).ToList();
-
-            foreach (var skill in ThisCharacter.PlayerSkills)
-            {
-                if (skill.BaseSkill.Type == "Expert")
-                {
-                    ExpertSkills.Add(skill);
-                }
-                if (skill.BaseSkill.Type == "Trained")
-                {
-                    TrainedSkills.Add(skill);
-                }
-                if (skill.BaseSkill.Type == "Basic")
-                {
-                    BasicSkills.Add(skill);
-                }
-            }
-
-            var counter = 0;
-            foreach (var skill in BasicSkills)
-            {
-                if (counter <= BasicSkills.Count / 2 && counter * 2 != BasicSkills.Count)
-                {
-                    BasicSkillsLeftTable.Add(skill);
-                }
-                else
-                {
-                    BasicSkillsRightTable.Add(skill);
-                }
-
-                counter++;
-            }
-
-            counter = 0;
-            foreach (var skill in TrainedSkills)
-            {
-                if (counter <= TrainedSkills.Count / 2 && counter * 2 != TrainedSkills.Count)
-                {
-                    TrainedSkillsLeftTable.Add(skill);
-                }
-                else
-                {
-                    TrainedSkillsRightTable.Add(skill);
-                }
-
-                counter++;
-            }
-
-            counter = 0;
-            foreach (var skill in ExpertSkills)
-            {
-                if (counter <= ExpertSkills.Count / 2 && counter * 2 != ExpertSkills.Count)
-                {
-                    ExpertSkillsLeftTable.Add(skill);
-                }
-                else
-                {
-                    ExpertSkillsRightTable.Add(skill);
-                }
-
-                counter++;
-            }
-        }
-
         protected async Task<PlayerAttribute> HandleIncreasePlayerAttribute(PlayerAttribute attribute)
         {
             var initialValue = attribute.Value;
@@ -299,6 +235,16 @@ namespace OutbreakBlazor.Pages
             if (initialValue == 45)
             {
                 AddToActionsLog($"{attribute.BaseAttribute.Name} already advanced to maximum value of 45");
+                return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
+            }
+
+            if (StartingAttributePoints > 0)
+            {
+                attribute.Value++;
+                StartingAttributePoints--;
+
+                AddToActionsLog($"{attribute.BaseAttribute.Name} value increased by 1 to {attribute.Value} -1 free point");
+
                 return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
             }
 
@@ -361,7 +307,6 @@ namespace OutbreakBlazor.Pages
 
             return await PlayerAttributeService.UpdatePlayerAttribute(attribute.Id, attribute);
         }
-
         protected async Task<PlayerAttribute> HandleDecreasePlayerAttribute(PlayerAttribute attribute)
         {
             var initialValue = attribute.Value;
@@ -380,9 +325,10 @@ namespace OutbreakBlazor.Pages
             }
             else
             {
+                StartingAttributePoints++;
                 valueToRemove = 1;
                 attribute.Value -= valueToRemove;
-                AddToActionsLog($"{attribute.BaseAttribute.Name} value reduced by 1 to {attribute.Value}");
+                AddToActionsLog($"{attribute.BaseAttribute.Name} value reduced by 1 to {attribute.Value} +1 free point");
             }
 
             if (attribute.Value/10 < initialValue / 10)
@@ -436,7 +382,6 @@ namespace OutbreakBlazor.Pages
             }
 
         }
-
         protected void HandleDecreaseAge()
         {
             
@@ -451,7 +396,6 @@ namespace OutbreakBlazor.Pages
 
             ThisCharacter.Age--;
         }
-
         protected void SetAge()
         {
             InitialValue = ThisCharacter.Age;
@@ -584,7 +528,6 @@ namespace OutbreakBlazor.Pages
                 ThisCharacter.PlayerAbilities.Add(tempAbility);
             }
         }
-
         protected async Task<PlayerAbility> HandleIncreasePlayerAbility(PlayerAbility ability)
         {
             AddToActionsLog($"<div align=\"center\"><b>^---- Increase {ability.BaseAbility.ShortName} Value ----^</b></div>");
@@ -616,7 +559,6 @@ namespace OutbreakBlazor.Pages
 
             return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
         }
-
         protected async Task<PlayerAbility> HandleDecreasePlayerAbility(PlayerAbility ability)
         {
             AddToActionsLog($"<div align=\"center\"><b>^---- Decrease {ability.BaseAbility.ShortName} Value ----^</b></div>");
@@ -682,7 +624,6 @@ namespace OutbreakBlazor.Pages
 
             return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
         }
-
         protected void DeletePlayerAbility(PlayerAbility ability)
         {
             AddToActionsLog("<div align=\"center\"><b>^---- Delete Ability ----^</b></div>");
@@ -748,6 +689,18 @@ namespace OutbreakBlazor.Pages
             if (ThisCharacter.GestaltLevel >= 0)
             {
                 ClearHighlightGestaltValue();
+            }
+
+            foreach (var skill in ability.SupportsPlayerSkills)
+            {
+                ThisCharacter.PlayerSkills.FirstOrDefault(s => s.Id == skill.Id).IsSupported = false;
+                foreach (var playerAbility in ThisCharacter.PlayerAbilities)
+                {
+                    foreach (var playerSkill in playerAbility.SupportsPlayerSkills)
+                    {
+                        ThisCharacter.PlayerSkills.FirstOrDefault(s => s.Id == playerSkill.Id).IsSupported = true;
+                    }
+                }
             }
         }
 
@@ -848,7 +801,6 @@ namespace OutbreakBlazor.Pages
 
             ThisCharacter.PlayerSkills.Add(playerSkill);
         }
-
         protected async Task<PlayerSkill> HandleIncreasePlayerSkill(PlayerSkill skill)
         {
             AddToActionsLog($"<div align=\"center\"><b>^---- Increase {skill.BaseSkill.ShortName} Value ----^</b></div>");
@@ -1072,7 +1024,6 @@ namespace OutbreakBlazor.Pages
 
             return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
         }
-
         protected async Task<PlayerSkill> HandleDecreasePlayerSkill(PlayerSkill skill)
         {
 
@@ -1097,7 +1048,6 @@ namespace OutbreakBlazor.Pages
 
             return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
         }
-
         protected async Task HandleSpecializeSkill(PlayerSkill skill)
         {
 
@@ -1127,7 +1077,6 @@ namespace OutbreakBlazor.Pages
 
             OnSpecializePlayerSkillToggleOn(newPlayerSkill);
         }
-
         protected void HandleRemovePlayerSkill(PlayerSkill skill)
         {
             ThisCharacter.SpecializedPlayerSkills.Remove(skill);
@@ -1151,6 +1100,74 @@ namespace OutbreakBlazor.Pages
                 ClearHighlightGestaltValue();
             }
         }
+        protected void SortSkills()
+        {
+            BasicSkills = BasicSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+            TrainedSkills = TrainedSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+            ExpertSkills = ExpertSkills.OrderBy(s => s.BaseSkill.Name).ToList();
+
+            foreach (var skill in ThisCharacter.PlayerSkills)
+            {
+                if (skill.BaseSkill.Type == "Expert")
+                {
+                    ExpertSkills.Add(skill);
+                }
+                if (skill.BaseSkill.Type == "Trained")
+                {
+                    TrainedSkills.Add(skill);
+                }
+                if (skill.BaseSkill.Type == "Basic")
+                {
+                    BasicSkills.Add(skill);
+                }
+            }
+
+            var counter = 0;
+            foreach (var skill in BasicSkills)
+            {
+                if (counter <= BasicSkills.Count / 2 && counter * 2 != BasicSkills.Count)
+                {
+                    BasicSkillsLeftTable.Add(skill);
+                }
+                else
+                {
+                    BasicSkillsRightTable.Add(skill);
+                }
+
+                counter++;
+            }
+
+            counter = 0;
+            foreach (var skill in TrainedSkills)
+            {
+                if (counter <= TrainedSkills.Count / 2 && counter * 2 != TrainedSkills.Count)
+                {
+                    TrainedSkillsLeftTable.Add(skill);
+                }
+                else
+                {
+                    TrainedSkillsRightTable.Add(skill);
+                }
+
+                counter++;
+            }
+
+            counter = 0;
+            foreach (var skill in ExpertSkills)
+            {
+                if (counter <= ExpertSkills.Count / 2 && counter * 2 != ExpertSkills.Count)
+                {
+                    ExpertSkillsLeftTable.Add(skill);
+                }
+                else
+                {
+                    ExpertSkillsRightTable.Add(skill);
+                }
+
+                counter++;
+            }
+        }
+
 
         protected void InitializePlayerTrainingValues(BaseTrainingValue value)
         {
@@ -1364,6 +1381,21 @@ namespace OutbreakBlazor.Pages
             AddToActionsLog(result);
 
             PlayerAbilityAttributeSelection.Toggle();
+
+            if (ability.BaseAbility.Name == "Support Basic Skill")
+            {
+                OnSupportBasicSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Trained Skill")
+            {
+                OnSupportTrainedSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Expert Skill")
+            {
+                OnSupportExpertSkillToggleOn(ability.BaseAbility);
+            }
         }
 
         protected BSModal PlayerAbilitySingleAttributeAddSpendSelection { get; set; }
@@ -1444,6 +1476,21 @@ namespace OutbreakBlazor.Pages
             AddToActionsLog(result);
 
             PlayerAbilitySpendSelection.Toggle();
+
+            if (ability.BaseAbility.Name == "Support Basic Skill")
+            {
+                OnSupportBasicSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Trained Skill")
+            {
+                OnSupportTrainedSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Expert Skill")
+            {
+                OnSupportExpertSkillToggleOn(ability.BaseAbility);
+            }
         }
         protected void OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
         {
@@ -1471,6 +1518,21 @@ namespace OutbreakBlazor.Pages
             AddToActionsLog(result);
 
             PlayerAbilitySpendSelection.Toggle();
+
+            if (ability.BaseAbility.Name == "Support Basic Skill")
+            {
+                OnSupportBasicSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Trained Skill")
+            {
+                OnSupportTrainedSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Expert Skill")
+            {
+                OnSupportExpertSkillToggleOn(ability.BaseAbility);
+            }
         }
 
         protected void HighlightAttribute(PlayerAttribute attribute)
@@ -1606,6 +1668,124 @@ namespace OutbreakBlazor.Pages
 
             //await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
 
+        }
+
+        protected BSModal SupportBasicSkill { get; set; }
+        protected void OnSupportBasicSkillToggleOn(BaseAbility ability)
+        {
+            foreach (var playerSkill in ThisCharacter.PlayerSkills)
+            {
+                var helper = new HelperClass();
+
+                if (playerSkill.BaseSkill.Type == "Basic" && playerSkill.IsSupported == false)
+                {
+                    helper.name = playerSkill.BaseSkill.ShortName;
+                    helper.style = "unselected";
+
+                    Helpers.Add(helper);
+                }
+            }
+            ThisBaseAbility = ability;
+            SupportBasicSkill.Toggle();
+        }
+        protected void OnSupportBasicSkillToggleOff()
+        {
+            var playerSkill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == ThisBaseSkill.Name);
+            var playerAbility = ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility == ThisBaseAbility);
+
+            playerSkill.IsSupported = true;
+            playerAbility.SupportsPlayerSkills.Add(playerSkill);
+
+            Helpers = new List<HelperClass>();
+            Disable = false;
+
+            SupportBasicSkill.Toggle();
+        }
+
+        protected BSModal SupportTrainedSkill { get; set; }
+        protected void OnSupportTrainedSkillToggleOn(BaseAbility ability)
+        {
+            foreach (var playerSkill in ThisCharacter.PlayerSkills)
+            {
+                var helper = new HelperClass();
+
+                if (playerSkill.BaseSkill.Type == "Trained" && playerSkill.IsSupported == false)
+                {
+                    helper.name = playerSkill.BaseSkill.ShortName;
+                    helper.style = "unselected";
+
+                    Helpers.Add(helper);
+                }
+            }
+            ThisBaseAbility = ability;
+            SupportTrainedSkill.Toggle();
+        }
+        protected void OnSupportTrainedSkillToggleOff()
+        {
+            var playerSkill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == ThisBaseSkill.Name);
+            var playerAbility = ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility == ThisBaseAbility);
+
+            playerSkill.IsSupported = true;
+            playerAbility.SupportsPlayerSkills.Add(playerSkill);
+
+            Helpers = new List<HelperClass>();
+            Disable = false;
+
+            SupportTrainedSkill.Toggle();
+        }
+
+        protected BSModal SupportExpertSkill { get; set; }
+        protected void OnSupportExpertSkillToggleOn(BaseAbility ability)
+        {
+            foreach (var playerSkill in ThisCharacter.PlayerSkills)
+            {
+                var helper = new HelperClass();
+
+                if (playerSkill.BaseSkill.Type == "Expert" && playerSkill.IsSupported == false)
+                {
+                    helper.name = playerSkill.BaseSkill.ShortName;
+                    helper.style = "unselected";
+
+                    Helpers.Add(helper);
+                }
+            }
+            ThisBaseAbility = ability;
+            SupportExpertSkill.Toggle();
+        }
+        protected void OnSupportExpertSkillToggleOff()
+        {
+            var playerSkill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == ThisBaseSkill.Name);
+            var playerAbility = ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility == ThisBaseAbility);
+
+            playerSkill.IsSupported = true;
+            playerAbility.SupportsPlayerSkills.Add(playerSkill);
+
+            Helpers = new List<HelperClass>();
+            Disable = false;
+
+            SupportExpertSkill.Toggle();
+        }
+
+        protected void OnSelectSkillToSupport(HelperClass skill)
+        {
+            if (skill.style == "unselected")
+            {
+                Disable = false;
+
+                foreach (var helperSkill in Helpers)
+                {
+                    helperSkill.style = "unselected";
+                }
+
+                skill.style = "selected";
+
+                ThisBaseSkill = BaseSkills.FirstOrDefault(s => s.ShortName == skill.name);
+            }
+            else
+            {
+                Disable = true;
+                skill.style = "unselected";
+            }
         }
 
         protected Array CsvStringToArray(string values)
