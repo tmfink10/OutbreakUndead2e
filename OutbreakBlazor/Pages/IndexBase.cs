@@ -612,6 +612,25 @@ namespace OutbreakBlazor.Pages
                 }
             }
 
+            if (ability.BaseAbility.Name == "Support Basic Skill" || ability.BaseAbility.Name == "Support Trained Skill" || ability.BaseAbility.Name == "Support Expert Skill")
+            {
+                var supportToRemove = ability.SupportsPlayerSkills[^1];
+                ThisCharacter.PlayerSkills
+                    .FirstOrDefault(s => s.BaseSkill.Name == supportToRemove.BaseSkill.Name)
+                    .IsSupported = false;
+
+                AddToActionsLog($"{ability.BaseAbility.ShortName} is no longer supporting {supportToRemove.BaseSkill.ShortName}");
+                ability.SupportsPlayerSkills.Remove(supportToRemove);
+
+                foreach (var playerAbility in ThisCharacter.PlayerAbilities)
+                {
+                    foreach (var playerSkill in playerAbility.SupportsPlayerSkills)
+                    {
+                        playerSkill.IsSupported = true;
+                    }
+                }
+            }
+
             if (attribute.Points >= 0)
             {
                 ClearHighlightAttribute(attribute);
@@ -694,6 +713,8 @@ namespace OutbreakBlazor.Pages
             foreach (var skill in ability.SupportsPlayerSkills)
             {
                 ThisCharacter.PlayerSkills.FirstOrDefault(s => s.Id == skill.Id).IsSupported = false;
+                AddToActionsLog($"{ability.BaseAbility.ShortName} is no longer supporting {skill.BaseSkill.ShortName}");
+
                 foreach (var playerAbility in ThisCharacter.PlayerAbilities)
                 {
                     foreach (var playerSkill in playerAbility.SupportsPlayerSkills)
@@ -1699,6 +1720,8 @@ namespace OutbreakBlazor.Pages
             Helpers = new List<HelperClass>();
             Disable = false;
 
+            AddToActionsLog($"{playerSkill.BaseSkill.Name} is now supported");
+
             SupportBasicSkill.Toggle();
         }
 
@@ -1731,6 +1754,8 @@ namespace OutbreakBlazor.Pages
             Helpers = new List<HelperClass>();
             Disable = false;
 
+            AddToActionsLog($"{playerSkill.BaseSkill.Name} is now supported");
+
             SupportTrainedSkill.Toggle();
         }
 
@@ -1762,6 +1787,8 @@ namespace OutbreakBlazor.Pages
 
             Helpers = new List<HelperClass>();
             Disable = false;
+
+            AddToActionsLog($"{playerSkill.BaseSkill.Name} is now supported");
 
             SupportExpertSkill.Toggle();
         }
