@@ -57,6 +57,7 @@ namespace OutbreakBlazor.Pages
         protected string HighlightEmpathy = "";
         protected string HighlightWillpower = "";
         protected string HighlightGestalt = "";
+        protected string ThisSport = "";
         protected bool Disable;
         protected bool CreateNew;
         protected bool AddAbilities;
@@ -65,6 +66,8 @@ namespace OutbreakBlazor.Pages
         protected int InitialValue;
         protected int StartingAttributePoints = 0;
         protected List<string> ActionsLog = new List<string>();
+        protected List<string> SportsList = new List<string>(){"Archery", "Baseball/Cricket", "Basketball", "Boxing", "Football/Rugby", "Golf", "Gymnastics", "Hockey", "Soccer"};
+        protected List<string> ThisCharacterSports = new List<string>();
         protected List<PlayerSkill> BasicSkills = new List<PlayerSkill>();
         protected List<PlayerSkill> BasicSkillsLeftTable = new List<PlayerSkill>();
         protected List<PlayerSkill> BasicSkillsRightTable = new List<PlayerSkill>();
@@ -105,9 +108,10 @@ namespace OutbreakBlazor.Pages
 
         public class HelperClass
         {
-            public string name;
-            public string style;
+            public string Name;
+            public string Style;
             public string FormString;
+            public List<string> StringOptions;
         }
 
         public PlayerCharacter ThisCharacter = new PlayerCharacter();
@@ -610,7 +614,7 @@ namespace OutbreakBlazor.Pages
                         if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
                         {
                             trainingValue.Value -= 1;
-                            AddToActionsLog($"{trainingValue.BaseTrainingValue.Name} reduced by 1");
+                            AddToActionsLog($"{trainingValue.BaseTrainingValue.Name} training value reduced by 1");
                         }
                     }
                 }
@@ -684,6 +688,21 @@ namespace OutbreakBlazor.Pages
                 .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
             var result = "";
+
+            if (ThisCharacter.TrainingValues != null)
+            {
+                foreach (var trainingValue in ThisCharacter.TrainingValues)
+                {
+                    foreach (var baseTrainingValue in ability.BaseAbility.ModifiesBaseTrainingValues)
+                    {
+                        if (trainingValue.BaseTrainingValue.Name == baseTrainingValue.Name)
+                        {
+                            trainingValue.Value -= ability.Tier;
+                            AddToActionsLog($"{trainingValue.BaseTrainingValue.Name} training value reduced by {ability.Tier}");
+                        }
+                    }
+                }
+            }
 
             for (int i = ability.AdvancedUsing.Count-1; i > -1; i--)
             {
@@ -1406,7 +1425,7 @@ namespace OutbreakBlazor.Pages
 
             foreach (var attribute in ability.BaseAbility.UsesBaseAttributes)
             {
-                var helperClass = new HelperClass {name = attribute.Name, style = "unselected"};
+                var helperClass = new HelperClass {Name = attribute.Name, Style = "unselected"};
                 Helpers.Add(helperClass);
             }
 
@@ -1455,6 +1474,11 @@ namespace OutbreakBlazor.Pages
             if (ability.BaseAbility.Name == "Civilian - Profession")
             {
                 OnSupportCivilianToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Athletic Conditioning <Sport>")
+            {
+                OnSupportAthleticConditioningToggleOn(ability.BaseAbility);
             }
         }
         protected void OnPlayerAbilityToggleOffUsingGestalt(PlayerAbility ability)
@@ -1508,27 +1532,32 @@ namespace OutbreakBlazor.Pages
             {
                 OnSupportCivilianToggleOn(ability.BaseAbility);
             }
+
+            if (ability.BaseAbility.Name == "Athletic Conditioning <Sport>")
+            {
+                OnSupportAthleticConditioningToggleOn(ability.BaseAbility);
+            }
         }
 
         protected void OnSelectAttribute(HelperClass attribute)
         {
-            if (attribute.style == "unselected")
+            if (attribute.Style == "unselected")
             {
                 Disable = false;
 
                 foreach (var helperSkill in Helpers)
                 {
-                    helperSkill.style = "unselected";
+                    helperSkill.Style = "unselected";
                 }
 
-                attribute.style = "selected";
+                attribute.Style = "selected";
 
-                ThisPlayerAttribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == attribute.name);
+                ThisPlayerAttribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == attribute.Name);
             }
             else
             {
                 Disable = true;
-                attribute.style = "unselected";
+                attribute.Style = "unselected";
             }
         }
 
@@ -1630,6 +1659,7 @@ namespace OutbreakBlazor.Pages
             {
                 OnSupportCivilianToggleOn(ability.BaseAbility);
             }
+
         }
         protected void OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
         {
@@ -1678,6 +1708,8 @@ namespace OutbreakBlazor.Pages
             {
                 OnSupportCivilianToggleOn(ability.BaseAbility);
             }
+
+            
         }
 
         protected void HighlightAttribute(PlayerAttribute attribute)
@@ -1826,8 +1858,8 @@ namespace OutbreakBlazor.Pages
 
                 if (playerSkill.BaseSkill.Type == "Basic" && playerSkill.IsSupported == false)
                 {
-                    helper.name = playerSkill.BaseSkill.ShortName;
-                    helper.style = "unselected";
+                    helper.Name = playerSkill.BaseSkill.ShortName;
+                    helper.Style = "unselected";
 
                     Helpers.Add(helper);
                 }
@@ -1862,8 +1894,8 @@ namespace OutbreakBlazor.Pages
 
                 if (playerSkill.BaseSkill.Type == "Trained" && playerSkill.IsSupported == false)
                 {
-                    helper.name = playerSkill.BaseSkill.ShortName;
-                    helper.style = "unselected";
+                    helper.Name = playerSkill.BaseSkill.ShortName;
+                    helper.Style = "unselected";
 
                     Helpers.Add(helper);
                 }
@@ -1898,8 +1930,8 @@ namespace OutbreakBlazor.Pages
 
                 if (playerSkill.BaseSkill.Type == "Expert" && playerSkill.IsSupported == false)
                 {
-                    helper.name = playerSkill.BaseSkill.ShortName;
-                    helper.style = "unselected";
+                    helper.Name = playerSkill.BaseSkill.ShortName;
+                    helper.Style = "unselected";
 
                     Helpers.Add(helper);
                 }
@@ -1922,26 +1954,25 @@ namespace OutbreakBlazor.Pages
 
             SupportExpertSkill.Toggle();
         }
-
         protected void OnSelectSkillToSupport(HelperClass skill)
         {
-            if (skill.style == "unselected")
+            if (skill.Style == "unselected")
             {
                 Disable = false;
 
                 foreach (var helperSkill in Helpers)
                 {
-                    helperSkill.style = "unselected";
+                    helperSkill.Style = "unselected";
                 }
 
-                skill.style = "selected";
+                skill.Style = "selected";
 
-                ThisBaseSkill = BaseSkills.FirstOrDefault(s => s.ShortName == skill.name);
+                ThisBaseSkill = BaseSkills.FirstOrDefault(s => s.ShortName == skill.Name);
             }
             else
             {
                 Disable = true;
-                skill.style = "unselected";
+                skill.Style = "unselected";
             }
         }
 
@@ -1956,16 +1987,16 @@ namespace OutbreakBlazor.Pages
 
                 if ((playerSkill.BaseSkill.Type == "Basic" || playerSkill.BaseSkill.Type == "Trained") && playerSkill.IsSupported == false)
                 {
-                    helper.name = playerSkill.BaseSkill.ShortName;
-                    helper.style = "unselected";
+                    helper.Name = playerSkill.BaseSkill.ShortName;
+                    helper.Style = "unselected";
 
                     Helpers.Add(helper);
                 }
 
-                Helpers = Helpers.OrderBy(s => s.name).ToList();
+                Helpers = Helpers.OrderBy(s => s.Name).ToList();
             }
 
-            Helpers.Add(new HelperClass() { name = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot").BaseSkill.ShortName, style = "unselected" });
+            Helpers.Add(new HelperClass() { Name = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot").BaseSkill.ShortName, Style = "unselected" });
 
             ThisBaseAbility = ability;
             SupportCivilian.Toggle();
@@ -1989,7 +2020,6 @@ namespace OutbreakBlazor.Pages
         }
 
         protected BSModal SupportCivilianTrainingValues { get; set; }
-
         protected void OnSupportCivilianTrainingValuesToggleOn()
         {
             Helpers = new List<HelperClass>();
@@ -1997,11 +2027,11 @@ namespace OutbreakBlazor.Pages
 
             foreach (var value in ThisCharacter.TrainingValues)
             {
-                var helperClass = new HelperClass() {name = value.BaseTrainingValue.Name, style = "unselected"};
+                var helperClass = new HelperClass() {Name = value.BaseTrainingValue.Name, Style = "unselected"};
                 Helpers.Add(helperClass);
             }
 
-            Helpers = Helpers.OrderBy(s => s.name).ToList();
+            Helpers = Helpers.OrderBy(s => s.Name).ToList();
 
             SupportCivilianTrainingValues.Toggle();
         }
@@ -2027,11 +2057,11 @@ namespace OutbreakBlazor.Pages
         }
         protected void OnSelectTrainingValue(HelperClass value)
         {
-            ThisPlayerTrainingValue = ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == value.name);
+            ThisPlayerTrainingValue = ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == value.Name);
 
-            if (value.style == "selected")
+            if (value.Style == "selected")
             {
-                value.style = "unselected";
+                value.Style = "unselected";
                 PlayerTrainingValues.Remove(ThisPlayerTrainingValue);
                 Disable = true;
                 return;
@@ -2041,20 +2071,162 @@ namespace OutbreakBlazor.Pages
             {
                 PlayerTrainingValues.Add(ThisPlayerTrainingValue);
 
-                value.style = "selected";
+                value.Style = "selected";
             }
             else if (PlayerTrainingValues.Count == 2)
             {
-                Helpers.FirstOrDefault(h => h.name == PlayerTrainingValues[^1].BaseTrainingValue.Name).style = "unselected";
+                Helpers.FirstOrDefault(h => h.Name == PlayerTrainingValues[^1].BaseTrainingValue.Name).Style = "unselected";
                 PlayerTrainingValues.Remove(PlayerTrainingValues[^1]);
                 PlayerTrainingValues.Add(ThisPlayerTrainingValue);
 
-                value.style = "selected";
+                value.Style = "selected";
             }
 
             if (PlayerTrainingValues.Count == 2)
             {
                 Disable = false;
+            }
+        }
+
+        protected BSModal SupportAthleticConditioning { get; set; }
+        protected void OnSupportAthleticConditioningToggleOn(BaseAbility ability)
+        {
+            Helpers = new List<HelperClass>();
+            Disable = true;
+
+            ThisBaseAbility = ability;
+
+            foreach (var value in SportsList)
+            {
+                var helperClass = new HelperClass() { Name = value, Style = "unselected" };
+                Helpers.Add(helperClass);
+            }
+
+            Helpers = Helpers.OrderBy(s => s.Name).ToList();
+
+            SupportAthleticConditioning.Toggle();
+        }
+        protected void OnSupportAthleticConditioningToggleOff()
+        {
+            Disable = false;
+            Helpers = new List<HelperClass>();
+
+            ThisCharacterSports.Add(ThisSport);
+
+            if (ThisSport == "Archery")
+            {
+                HandleSportAdd("Archery", "Bow/Crossbow", "Spot/Listen");
+            }
+            else if (ThisSport == "Baseball/Cricket")
+            {
+                HandleSportAdd("Baseball/Cricket", "Melee Attack <Bludgeoning>", "Throw");
+            }
+            else if (ThisSport == "Basketball")
+            {
+                HandleSportAdd("Basketball", "Jump/Leap", "Throw");
+            }
+            else if (ThisSport == "Boxing")
+            {
+                HandleSportAdd("Boxing", "Brawl", "Toughness");
+            }
+            else if (ThisSport == "Football/Rugby")
+            {
+                StringSelectToggleOn("Grapple", "Throw");
+            }
+            else if (ThisSport == "Golf")
+            {
+                HandleSportAdd("Golf", "Melee Attack <Bludgeoning>", "Hold");
+            }
+            else if (ThisSport == "Gymnastics")
+            {
+                HandleSportAdd("Gymnastics", "Jump/Leap", "Balance");
+            }
+            else if (ThisSport == "Hockey")
+            {
+                HandleSportAdd("Hockey", "Melee Attack <Bludgeoning>", "Balance");
+            }
+            else if (ThisSport == "Soccer")
+            {
+                HandleSportAdd("Soccer", "Brawl", "Endurance");
+            }
+
+            SupportAthleticConditioning.Toggle();
+        }
+        protected void OnSelectSport(HelperClass sport)
+        {
+            if (sport.Style == "unselected")
+            {
+                Disable = false;
+
+                foreach (var helperSkill in Helpers)
+                {
+                    helperSkill.Style = "unselected";
+                }
+
+                sport.Style = "selected";
+
+                ThisSport = sport.Name;
+            }
+            else
+            {
+                Disable = true;
+                sport.Style = "unselected";
+            }
+        }
+
+        protected void HandleSportAdd(string sport, string skill1, string skill2)
+        {
+            ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == skill1).IsSupported = true;
+            ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == skill2).IsSupported = true;
+            ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == ThisBaseAbility.Name).SupportsPlayerSkills
+                .Add(ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == skill1));
+            ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == ThisBaseAbility.Name).SupportsPlayerSkills
+                .Add(ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == skill2));
+            ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == ThisBaseAbility.Name).Notes = sport;
+
+            AddToActionsLog($"{sport} supports {skill1} and {skill2}");
+        }
+
+        protected BSModal StringSelect { get; set; }
+        protected void StringSelectToggleOn(string string1, string string2)
+        {
+            var helper1 = new HelperClass() {Name = string1, Style = "unselected"};
+            var helper2 = new HelperClass() {Name = string2, Style = "unselected"};
+
+            Helpers = new List<HelperClass>() {helper1, helper2};
+
+            StringSelect.Toggle();
+        }
+
+        protected void StringSelectToggleOff()
+        {
+            if (Helper.Name == "Grapple" || Helper.Name == "Throw")
+            {
+                HandleSportAdd("Football/Rugby", "Resist Pain", Helper.Name);
+            }
+
+            StringSelect.Toggle();
+        }
+
+        protected void OnStringSelect(HelperClass option)
+        {
+            if (option.Style == "unselected")
+            {
+                Disable = false;
+
+                foreach (var helperSkill in Helpers)
+                {
+                    helperSkill.Style = "unselected";
+                }
+
+                option.Style = "selected";
+
+                Helper = option;
+            }
+            else
+            {
+                Disable = true;
+                option.Style = "unselected";
             }
         }
 

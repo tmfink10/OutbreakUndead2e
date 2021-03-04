@@ -10,7 +10,11 @@
     <h1 style="margin-bottom: 20px" class="outbreak-header">Outbreak Undead 2e: Character Creator</h1>
 
     <p>
-        Welcome to the character creator section. Character creation happens in three phases: <br />
+        Welcome to the character creator beta test. <br /><br />
+        <b>To learn more about most things, just click that thing's name. Try it out by clicking on More Information below.</b><br /><br />
+        <div @onclick="@ToggleWelcomeModal">More Information</div><br /><br />
+
+        Character creation happens in three phases: <br />
         1) Choose your character's core traits such as Name, Age, and S.P.E.W. attributes.<br />
         2) Choose your character's abilities.<br />
         3) Update your character's skills.<br /><br />
@@ -28,11 +32,6 @@
         If you are using this tool reasonably, it should respond in kind. If you wish to break it, it will let you.<br /><br />
 
         Best of luck in your campaign and may the dice roll ever in your favor.<br /><br />
-
-        <b>To learn more about most things, just click its name. Try it out by clicking on More Information below.</b><br /><br />
-        <div @onclick="@ToggleWelcomeModal">More Information</div>
-
-
     </p>
     <button class="btn btn-specialize" @onclick="HandleNewCharacterClick">Create New Character</button>
 
@@ -643,7 +642,7 @@ else
                     <div class="outbreak-attributes-container">
                         @foreach (var helperClass in Helpers)
                         {
-                            <button class="btn btn-specialize @helperClass.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectAttribute(helperClass))">@helperClass.name</button>
+                            <button class="btn btn-specialize @helperClass.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectAttribute(helperClass))">@helperClass.Name</button>
                         }
                     </div>
                     <br/>
@@ -738,7 +737,7 @@ else
             <div class="outbreak-container">
                 @foreach (var skill in Helpers)
                 {
-                    <button class="btn btn-specialize @skill.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.name</button>
+                    <button class="btn btn-specialize @skill.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.Name</button>
                 }
             </div>
         </BSModalBody>
@@ -753,7 +752,7 @@ else
             <div class="outbreak-container">
                 @foreach (var skill in Helpers)
                 {
-                    <button class="btn btn-specialize @skill.style outbreak-select-button" style="width: 32%; margin:2px" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.name</button>
+                    <button class="btn btn-specialize @skill.Style outbreak-select-button" style="width: 32%; margin:2px" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.Name</button>
                 }
             </div> 
         </BSModalBody>
@@ -768,7 +767,7 @@ else
             <div class="outbreak-container">
                 @foreach (var skill in Helpers)
                 {
-                    <button class="btn btn-specialize @skill.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.name</button>
+                    <button class="btn btn-specialize @skill.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.Name</button>
                 }
             </div>
         </BSModalBody>
@@ -783,7 +782,7 @@ else
             <div class="outbreak-container" style="height: 790px;">
                 @foreach (var skill in Helpers)
                 {
-                    <button class="btn btn-specialize @skill.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.name</button>
+                    <button class="btn btn-specialize @skill.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.Name</button>
                 }
             </div>
         </BSModalBody>
@@ -798,12 +797,42 @@ else
             <div class="outbreak-container" style="height: 530px;">
                 @foreach (var helperClass in Helpers)
                 {
-                    <button class="btn btn-specialize @helperClass.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectTrainingValue(helperClass))">@helperClass.name</button>
+                    <button class="btn btn-specialize @helperClass.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectTrainingValue(helperClass))">@helperClass.Name</button>
                 }
             </div>
         </BSModalBody>
         <BSModalFooter>
             <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportCivilianTrainingValuesToggleOff)">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="SupportAthleticConditioning" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Select a sport</BSModalHeader>
+        <BSModalBody>
+            <div class="outbreak-container" style="height: 250px;">
+                @foreach (var helperClass in Helpers)
+                {
+                    <button class="btn btn-specialize @helperClass.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSport(helperClass))">@helperClass.Name</button>
+                }
+            </div>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportAthleticConditioningToggleOff)">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="StringSelect" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Choose One</BSModalHeader>
+        <BSModalBody>
+            <div class="outbreak-container" style="height: 100px; justify-content: flex-start">
+                @foreach (var option in Helpers)
+                {
+                    <button class="btn btn-specialize @option.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnStringSelect(option))">@option.Name</button>
+                }
+            </div>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(StringSelectToggleOff)">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 }
