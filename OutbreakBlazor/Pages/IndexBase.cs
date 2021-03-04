@@ -1353,12 +1353,24 @@ namespace OutbreakBlazor.Pages
         protected BSModal PlayerAbilityAttributeSelection { get; set; }
         protected void OnPlayerAbilityToggleOn(PlayerAbility ability)
         {
+            Disable = true;
+            Helpers = new List<HelperClass>();
+
+            foreach (var attribute in ability.BaseAbility.UsesBaseAttributes)
+            {
+                var helperClass = new HelperClass {name = attribute.Name, style = "unselected"};
+                Helpers.Add(helperClass);
+            }
+
             ThisPlayerAbility = ability;
             ThisBaseAbility = ThisPlayerAbility.BaseAbility;
+
             PlayerAbilityAttributeSelection.Toggle();
         }
         protected void OnPlayerAbilityToggleOffUsingPoints(PlayerAbility ability)
         {
+            ability.AddedUsingBaseAttributeCode = ThisPlayerAttribute.BaseAttribute.Name;
+
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
             attribute.Points -= 1;
@@ -1377,6 +1389,8 @@ namespace OutbreakBlazor.Pages
         }
         protected void OnPlayerAbilityToggleOffUsingGestalt(PlayerAbility ability)
         {
+            ability.AddedUsingBaseAttributeCode = ThisPlayerAttribute.BaseAttribute.Name;
+
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
             var spend = 5 - attribute.Bonus;
 
@@ -1416,6 +1430,28 @@ namespace OutbreakBlazor.Pages
             if (ability.BaseAbility.Name == "Support Expert Skill")
             {
                 OnSupportExpertSkillToggleOn(ability.BaseAbility);
+            }
+        }
+
+        protected void OnSelectAttribute(HelperClass attribute)
+        {
+            if (attribute.style == "unselected")
+            {
+                Disable = false;
+
+                foreach (var helperSkill in Helpers)
+                {
+                    helperSkill.style = "unselected";
+                }
+
+                attribute.style = "selected";
+
+                ThisPlayerAttribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == attribute.name);
+            }
+            else
+            {
+                Disable = true;
+                attribute.style = "unselected";
             }
         }
 
@@ -1515,6 +1551,7 @@ namespace OutbreakBlazor.Pages
         }
         protected void OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
         {
+            
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
             var result = $"Spent {ability.Tier} Gestalt";
 
@@ -1694,6 +1731,8 @@ namespace OutbreakBlazor.Pages
         protected BSModal SupportBasicSkill { get; set; }
         protected void OnSupportBasicSkillToggleOn(BaseAbility ability)
         {
+            Disable = true;
+
             foreach (var playerSkill in ThisCharacter.PlayerSkills)
             {
                 var helper = new HelperClass();
@@ -1728,6 +1767,8 @@ namespace OutbreakBlazor.Pages
         protected BSModal SupportTrainedSkill { get; set; }
         protected void OnSupportTrainedSkillToggleOn(BaseAbility ability)
         {
+            Disable = true;
+
             foreach (var playerSkill in ThisCharacter.PlayerSkills)
             {
                 var helper = new HelperClass();
@@ -1762,6 +1803,8 @@ namespace OutbreakBlazor.Pages
         protected BSModal SupportExpertSkill { get; set; }
         protected void OnSupportExpertSkillToggleOn(BaseAbility ability)
         {
+            Disable = true;
+
             foreach (var playerSkill in ThisCharacter.PlayerSkills)
             {
                 var helper = new HelperClass();
@@ -1814,6 +1857,8 @@ namespace OutbreakBlazor.Pages
                 skill.style = "unselected";
             }
         }
+
+
 
         protected Array CsvStringToArray(string values)
         {

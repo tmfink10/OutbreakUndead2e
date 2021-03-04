@@ -146,7 +146,8 @@ else
 
     @if (StartingAttributePoints > 0)
     {
-        <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">S.P.E.W Attributes<br />(You may allocate @StartingAttributePoints points for free)</h2>
+        <h2 style="margin-bottom: 10px; margin-top: 20px" align="center" class="col-md-8 outbreak-category">S.P.E.W Attributes</h2>
+        <p style="margin-bottom: 10px; font-size: 1.4rem; background-color: rgba(50, 168, 52, 0.3)" align="center" class="col-md-8">You may allocate @StartingAttributePoints point(s) for free</p>
     }
     else
     {
@@ -634,61 +635,65 @@ else
     </BSModal>
 
     <BSModal @ref="PlayerAbilityAttributeSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-        <BSModalHeader>Select Attribute with which to add @ThisBaseAbility.Name</BSModalHeader>
         <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
             <BSModalBody>
+                <p style="font-size: 1.6rem;">Add @ThisBaseAbility.Name using:</p>
                 @if (ThisPlayerAbility.BaseAbility != null)
                 {
-                    <InputRadioGroup @bind-Value="ThisPlayerAbility.AddedUsingBaseAttributeCode">
-                        @foreach (var attributeX in ThisPlayerAbility.BaseAbility.UsesBaseAttributes)
-                                {
-                            <InputRadio Value="attributeX.Name" /> @attributeX.Name <br />
-                                }
-                    </InputRadioGroup>
-                    <br />
+                    <div class="outbreak-attributes-container">
+                        @foreach (var helperClass in Helpers)
+                        {
+                            <button class="btn btn-specialize @helperClass.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectAttribute(helperClass))">@helperClass.name</button>
+                        }
+                    </div>
+                    <br/>
                     @if (ThisPlayerAbility.BaseAbility.IsProfessional)
                     {
                         <BSFormGroup IsCheck="true">
-                            <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
+                            <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction"/>
                             <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
                         </BSFormGroup>
                     }
                 }
-                <br />
-                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit"
-                          @onclick="(() => OnPlayerAbilityToggleOffUsingGestalt(ThisPlayerAbility))"
-                          IsDisabled="string.IsNullOrWhiteSpace(ThisPlayerAbility.AddedUsingBaseAttributeCode)"
-                          style="width: 40%">Gestalt Levels</BSButton>
-                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit"
-                          @onclick="(() => OnPlayerAbilityToggleOffUsingPoints(ThisPlayerAbility))"
-                          IsDisabled="string.IsNullOrWhiteSpace(ThisPlayerAbility.AddedUsingBaseAttributeCode)"
-                          style="width: 40%">Attribute Points</BSButton>
+                <br/>
+                <div class="outbreak-button-container">
+                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit"
+                              @onclick="(() => OnPlayerAbilityToggleOffUsingGestalt(ThisPlayerAbility))"
+                              IsDisabled="@Disable"
+                              style="width: 40%">Gestalt Levels</BSButton>
+                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit"
+                              @onclick="(() => OnPlayerAbilityToggleOffUsingPoints(ThisPlayerAbility))"
+                              IsDisabled="@Disable"
+                              style="width: 40%">Attribute Points</BSButton>
+                </div>
             </BSModalBody>
         </EditForm>
     </BSModal>
 
     <BSModal @ref="PlayerAbilitySingleAttributeAddSpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-        <BSModalHeader>Select how to pay for @ThisBaseAbility.Name advancement</BSModalHeader>
         <BSForm Model="ThisPlayerAbility" IsInline="true" OnValidSubmit="UpdateThisPlayerAttribute">
             <BSModalBody>
+                <p style="font-size: 1.6rem;">Pay for @ThisBaseAbility.Name using:</p>
                 @if (ThisPlayerAbility.BaseAbility.IsProfessional)
                 {
                     <BSFormGroup IsCheck="true">
-                        <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
+                        <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction"/>
                         <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
                     </BSFormGroup>
                 }
-                <br />
-                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" @onclick="(()=>OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
-                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" @onclick="(()=>OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
+                <br/>
+                <div class="outbreak-button-container">
+                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" @onclick="(() => OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
+                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" @onclick="(() => OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
+                </div>
             </BSModalBody>
         </BSForm>
     </BSModal>
 
     <BSModal @ref="PlayerAbilitySpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-        <BSModalHeader>Select how to pay for @ThisBaseAbility.Name advancement</BSModalHeader>
         <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
             <BSModalBody>
+                <p style="font-size: 1.6rem;">Pay for @ThisBaseAbility.Name using:</p>
                 @if (ThisPlayerAbility.BaseAbility.IsProfessional)
                 {
                     <BSFormGroup IsCheck="true">
@@ -697,8 +702,10 @@ else
                     </BSFormGroup>
                 }
                 <br />
-                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(()=>OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
-                <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(()=>OnPlayerAbilitySpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
+                <div class="outbreak-button-container">
+                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(() => OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
+                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(() => OnPlayerAbilitySpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
+                </div>
             </BSModalBody>
         </EditForm>
     </BSModal>
@@ -726,12 +733,14 @@ else
     </BSModal>
 
     <BSModal @ref="SupportBasicSkill" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-        <BSModalHeader>Support Basic Skill</BSModalHeader>
-        <BSModalBody style="justify-content: space-evenly">
-            @foreach (var skill in Helpers)
-            {
-                <button class="btn btn-specialize @skill.style" style="width: 300px; align-self: center;" @onclick="(()=>OnSelectSkillToSupport(skill))">@skill.name</button><br />
-            }
+        <BSModalHeader class="outbreak-header">Support Basic Skill</BSModalHeader>
+        <BSModalBody>
+            <div class="outbreak-container">
+                @foreach (var skill in Helpers)
+                {
+                    <button class="btn btn-specialize @skill.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.name</button>
+                }
+            </div>
         </BSModalBody>
         <BSModalFooter>
             <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportBasicSkillToggleOff)">Ok</BSButton>
@@ -741,10 +750,12 @@ else
     <BSModal @ref="SupportTrainedSkill" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
         <BSModalHeader>Support Trained Skill</BSModalHeader>
         <BSModalBody>
-            @foreach (var skill in Helpers)
-            {
-                <button class="btn btn-specialize @skill.style" style="width: 300px; align-self: center;" @onclick="(()=>OnSelectSkillToSupport(skill))">@skill.name</button><br />
-            }
+            <div class="outbreak-container">
+                @foreach (var skill in Helpers)
+                {
+                    <button class="btn btn-specialize @skill.style outbreak-select-button" style="width: 32%; margin:2px" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.name</button>
+                }
+            </div> 
         </BSModalBody>
         <BSModalFooter>
             <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportTrainedSkillToggleOff)">Ok</BSButton>
@@ -752,12 +763,14 @@ else
     </BSModal>
 
     <BSModal @ref="SupportExpertSkill" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-        <BSModalHeader>Support Trained Skill</BSModalHeader>
+        <BSModalHeader>Support Expert Skill</BSModalHeader>
         <BSModalBody>
-            @foreach (var skill in Helpers)
-            {
-                <button class="btn btn-specialize @skill.style" style="width: 300px; align-self: center;" @onclick="(()=>OnSelectSkillToSupport(skill))">@skill.name</button><br />
-            }
+            <div class="outbreak-container">
+                @foreach (var skill in Helpers)
+                {
+                    <button class="btn btn-specialize @skill.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.name</button>
+                }
+            </div>
         </BSModalBody>
         <BSModalFooter>
             <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportExpertSkillToggleOff)">Ok</BSButton>

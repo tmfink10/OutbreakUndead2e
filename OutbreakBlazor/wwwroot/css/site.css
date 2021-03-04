@@ -363,3 +363,31 @@ div .outbreak-gradient {
     transition: opacity 0.15s;
     opacity: 0.75;
 }
+
+.outbreak-container {
+    height: 415px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: center;
+}
+
+.outbreak-attributes-container {
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: center;
+}
+
+.outbreak-select-button {
+    flex-basis: auto;
+    margin: 3px;
+}
+
+.outbreak-button-container {
+    display: flex;
+    align-content: center;
+    justify-content: space-evenly;
+    margin-bottom: 40px;
+}
