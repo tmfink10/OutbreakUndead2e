@@ -77,6 +77,8 @@ namespace OutbreakBlazor.Pages
         protected List<PlayerSkill> SpecializedSkillsLeftTable = new List<PlayerSkill>();
         protected List<PlayerSkill> SpecializedSkillsRightTable = new List<PlayerSkill>();
         protected List<HelperClass> Helpers = new List<HelperClass>();
+        protected List<PlayerTrainingValue> PlayerTrainingValues = new List<PlayerTrainingValue>();
+        protected List<PlayerTrainingValue> PlayerTrainingValuesAdvancedByCivilian = new List<PlayerTrainingValue>();
 
         protected override async Task OnInitializedAsync()
         {
@@ -113,6 +115,8 @@ namespace OutbreakBlazor.Pages
         protected BaseSkill ThisBaseSkill = new BaseSkill();
         protected PlayerAbility ThisPlayerAbility = new PlayerAbility(){BaseAbility = new BaseAbility()};
         protected PlayerAttribute ThisPlayerAttribute = new PlayerAttribute() {BaseAttribute = new BaseAttribute()};
+        protected PlayerTrainingValue ThisPlayerTrainingValue = new PlayerTrainingValue() { BaseTrainingValue = new BaseTrainingValue()};
+
 
         protected PlayerSkill ThisPlayerSkill = new PlayerSkill()
         {
@@ -631,6 +635,34 @@ namespace OutbreakBlazor.Pages
                 }
             }
 
+            if (ability.BaseAbility.Name == "Civilian - Profession")
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    var valueToDecrement = PlayerTrainingValuesAdvancedByCivilian[^1];
+                    ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == valueToDecrement.BaseTrainingValue.Name)
+                        .Value--;
+                    PlayerTrainingValuesAdvancedByCivilian.RemoveAt(PlayerTrainingValuesAdvancedByCivilian.Count-1);
+                    AddToActionsLog($"Reduced {valueToDecrement.BaseTrainingValue.Name} by 1");
+                }
+
+                var removeSupportFrom = ability.SupportsPlayerSkills[^1];
+                ability.SupportsPlayerSkills.RemoveAt(ability.SupportsPlayerSkills.Count-1);
+
+                ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == removeSupportFrom.BaseSkill.Name)
+                    .IsSupported = false;
+
+                AddToActionsLog($"{ability.BaseAbility.ShortName} is no longer supporting {removeSupportFrom.BaseSkill.ShortName}");
+
+                foreach (var playerAbility in ThisCharacter.PlayerAbilities)
+                {
+                    foreach (var playerSkill in playerAbility.SupportsPlayerSkills)
+                    {
+                        ThisCharacter.PlayerSkills.FirstOrDefault(s => s.Id == playerSkill.Id).IsSupported = true;
+                    }
+                }
+            }
+
             if (attribute.Points >= 0)
             {
                 ClearHighlightAttribute(attribute);
@@ -645,7 +677,7 @@ namespace OutbreakBlazor.Pages
         }
         protected void DeletePlayerAbility(PlayerAbility ability)
         {
-            AddToActionsLog("<div align=\"center\"><b>^---- Delete Ability ----^</b></div>");
+            AddToActionsLog($"<div align=\"center\"><b>^---- Delete {ability.BaseAbility.ShortName} ----^</b></div>");
 
             ThisCharacter.PlayerAbilities.Remove(ability);
             var attribute = ThisCharacter.PlayerAttributes
@@ -722,6 +754,23 @@ namespace OutbreakBlazor.Pages
                         ThisCharacter.PlayerSkills.FirstOrDefault(s => s.Id == playerSkill.Id).IsSupported = true;
                     }
                 }
+            }
+
+            if (ability.BaseAbility.Name == "Civilian - Profession")
+            {
+                for (int i = 0; i < PlayerTrainingValuesAdvancedByCivilian.Count; i++)
+                {
+                    var playerTrainingValue = PlayerTrainingValuesAdvancedByCivilian[i];
+
+                    AddToActionsLog($"Reduced {playerTrainingValue.BaseTrainingValue.Name} by 1");
+
+                    ThisCharacter.TrainingValues.FirstOrDefault(t =>
+                            t.BaseTrainingValue.Name == playerTrainingValue.BaseTrainingValue.Name)
+                        .Value--;
+                }
+
+                PlayerTrainingValuesAdvancedByCivilian = new List<PlayerTrainingValue>();
+
             }
         }
 
@@ -1189,7 +1238,6 @@ namespace OutbreakBlazor.Pages
             }
         }
 
-
         protected void InitializePlayerTrainingValues(BaseTrainingValue value)
         {
             var tempPlayerTrainingValue = new PlayerTrainingValue { BaseTrainingValue = value, Value = 0 };
@@ -1369,6 +1417,8 @@ namespace OutbreakBlazor.Pages
         }
         protected void OnPlayerAbilityToggleOffUsingPoints(PlayerAbility ability)
         {
+            Helpers = new List<HelperClass>();
+
             ability.AddedUsingBaseAttributeCode = ThisPlayerAttribute.BaseAttribute.Name;
 
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
@@ -1386,9 +1436,31 @@ namespace OutbreakBlazor.Pages
             AddToActionsLog(result);
 
             PlayerAbilityAttributeSelection.Toggle();
+
+            if (ability.BaseAbility.Name == "Support Basic Skill")
+            {
+                OnSupportBasicSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Trained Skill")
+            {
+                OnSupportTrainedSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Expert Skill")
+            {
+                OnSupportExpertSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Civilian - Profession")
+            {
+                OnSupportCivilianToggleOn(ability.BaseAbility);
+            }
         }
         protected void OnPlayerAbilityToggleOffUsingGestalt(PlayerAbility ability)
         {
+            Helpers = new List<HelperClass>();
+
             ability.AddedUsingBaseAttributeCode = ThisPlayerAttribute.BaseAttribute.Name;
 
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
@@ -1430,6 +1502,11 @@ namespace OutbreakBlazor.Pages
             if (ability.BaseAbility.Name == "Support Expert Skill")
             {
                 OnSupportExpertSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Civilian - Profession")
+            {
+                OnSupportCivilianToggleOn(ability.BaseAbility);
             }
         }
 
@@ -1548,6 +1625,11 @@ namespace OutbreakBlazor.Pages
             {
                 OnSupportExpertSkillToggleOn(ability.BaseAbility);
             }
+
+            if (ability.BaseAbility.Name == "Civilian - Profession")
+            {
+                OnSupportCivilianToggleOn(ability.BaseAbility);
+            }
         }
         protected void OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
         {
@@ -1590,6 +1672,11 @@ namespace OutbreakBlazor.Pages
             if (ability.BaseAbility.Name == "Support Expert Skill")
             {
                 OnSupportExpertSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Civilian - Profession")
+            {
+                OnSupportCivilianToggleOn(ability.BaseAbility);
             }
         }
 
@@ -1858,7 +1945,118 @@ namespace OutbreakBlazor.Pages
             }
         }
 
+        protected BSModal SupportCivilian { get; set; }
+        protected void OnSupportCivilianToggleOn(BaseAbility ability)
+        {
+            Disable = true;
 
+            foreach (var playerSkill in ThisCharacter.PlayerSkills)
+            {
+                var helper = new HelperClass();
+
+                if ((playerSkill.BaseSkill.Type == "Basic" || playerSkill.BaseSkill.Type == "Trained") && playerSkill.IsSupported == false)
+                {
+                    helper.name = playerSkill.BaseSkill.ShortName;
+                    helper.style = "unselected";
+
+                    Helpers.Add(helper);
+                }
+
+                Helpers = Helpers.OrderBy(s => s.name).ToList();
+            }
+
+            Helpers.Add(new HelperClass() { name = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot").BaseSkill.ShortName, style = "unselected" });
+
+            ThisBaseAbility = ability;
+            SupportCivilian.Toggle();
+        }
+        protected void OnSupportCivilianToggleOff()
+        {
+            var playerSkill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == ThisBaseSkill.Name);
+            var playerAbility = ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility == ThisBaseAbility);
+
+            playerSkill.IsSupported = true;
+            playerAbility.SupportsPlayerSkills.Add(playerSkill);
+
+            Helpers = new List<HelperClass>();
+            Disable = false;
+
+            AddToActionsLog($"{playerSkill.BaseSkill.Name} is now supported");
+
+            SupportCivilian.Toggle();
+
+            OnSupportCivilianTrainingValuesToggleOn();
+        }
+
+        protected BSModal SupportCivilianTrainingValues { get; set; }
+
+        protected void OnSupportCivilianTrainingValuesToggleOn()
+        {
+            Helpers = new List<HelperClass>();
+            Disable = true;
+
+            foreach (var value in ThisCharacter.TrainingValues)
+            {
+                var helperClass = new HelperClass() {name = value.BaseTrainingValue.Name, style = "unselected"};
+                Helpers.Add(helperClass);
+            }
+
+            SupportCivilianTrainingValues.Toggle();
+        }
+
+        protected void OnSupportCivilianTrainingValuesToggleOff()
+        {
+            Disable = false;
+            Helpers = new List<HelperClass>();
+
+            foreach (var playerTrainingValue in PlayerTrainingValues)
+            {
+                ThisCharacter.TrainingValues
+                    .FirstOrDefault(t => t.BaseTrainingValue.Name == playerTrainingValue.BaseTrainingValue.Name)
+                    .Value++;
+
+                AddToActionsLog($"Increased {playerTrainingValue.BaseTrainingValue.Name} training value by 1.");
+
+                PlayerTrainingValuesAdvancedByCivilian.Add(playerTrainingValue);
+            }
+
+            PlayerTrainingValues = new List<PlayerTrainingValue>();
+
+            SupportCivilianTrainingValues.Toggle();
+        }
+
+        protected void OnSelectTrainingValue(HelperClass value)
+        {
+            ThisPlayerTrainingValue = ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == value.name);
+
+            if (value.style == "selected")
+            {
+                value.style = "unselected";
+                PlayerTrainingValues.Remove(ThisPlayerTrainingValue);
+                Disable = true;
+                return;
+            }
+
+            if (PlayerTrainingValues.Count < 2)
+            {
+                PlayerTrainingValues.Add(ThisPlayerTrainingValue);
+
+                value.style = "selected";
+            }
+            else if (PlayerTrainingValues.Count == 2)
+            {
+                Helpers.FirstOrDefault(h => h.name == PlayerTrainingValues[^1].BaseTrainingValue.Name).style = "unselected";
+                PlayerTrainingValues.Remove(PlayerTrainingValues[^1]);
+                PlayerTrainingValues.Add(ThisPlayerTrainingValue);
+
+                value.style = "selected";
+            }
+
+            if (PlayerTrainingValues.Count == 2)
+            {
+                Disable = false;
+            }
+        }
 
         protected Array CsvStringToArray(string values)
         {

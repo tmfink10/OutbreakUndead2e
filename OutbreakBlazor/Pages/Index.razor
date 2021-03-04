@@ -776,4 +776,34 @@ else
             <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportExpertSkillToggleOff)">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
+
+    <BSModal @ref="SupportCivilian" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Civilian Supports:</BSModalHeader>
+        <BSModalBody>
+            <div class="outbreak-container" style="height: 800px;">
+                @foreach (var skill in Helpers)
+                {
+                    <button class="btn btn-specialize @skill.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSkillToSupport(skill))">@skill.name</button>
+                }
+            </div>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportCivilianToggleOff)">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="SupportCivilianTrainingValues" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Advance 2 Training Values</BSModalHeader>
+        <BSModalBody>
+            <div class="outbreak-container" style="height: 800px;">
+                @foreach (var helperClass in Helpers)
+                {
+                    <button class="btn btn-specialize @helperClass.style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectTrainingValue(helperClass))">@helperClass.name</button>
+                }
+            </div>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportCivilianTrainingValuesToggleOff)">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
 }
