@@ -2001,9 +2001,10 @@ namespace OutbreakBlazor.Pages
                 Helpers.Add(helperClass);
             }
 
+            Helpers = Helpers.OrderBy(s => s.name).ToList();
+
             SupportCivilianTrainingValues.Toggle();
         }
-
         protected void OnSupportCivilianTrainingValuesToggleOff()
         {
             Disable = false;
@@ -2024,7 +2025,6 @@ namespace OutbreakBlazor.Pages
 
             SupportCivilianTrainingValues.Toggle();
         }
-
         protected void OnSelectTrainingValue(HelperClass value)
         {
             ThisPlayerTrainingValue = ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == value.name);
