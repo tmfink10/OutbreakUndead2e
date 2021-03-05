@@ -835,4 +835,19 @@ else
             <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(StringSelectToggleOff)">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
+
+    <BSModal @ref="SupportAutodidact" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Training Value to Advance</BSModalHeader>
+        <BSModalBody>
+            <div class="outbreak-container" style="height: 530px;">
+                @foreach (var trainingValue in Helpers)
+                {
+                    <button class="btn btn-specialize @trainingValue.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectSingleTrainingValue(trainingValue))">@trainingValue.Name</button>
+                }
+            </div>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportAutodidactToggleOff)">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -82,6 +83,7 @@ namespace OutbreakBlazor.Pages
         protected List<HelperClass> Helpers = new List<HelperClass>();
         protected List<PlayerTrainingValue> PlayerTrainingValues = new List<PlayerTrainingValue>();
         protected List<PlayerTrainingValue> PlayerTrainingValuesAdvancedByCivilian = new List<PlayerTrainingValue>();
+        protected List<PlayerTrainingValue> AutodidactTrainingValues = new List<PlayerTrainingValue>();
 
         protected override async Task OnInitializedAsync()
         {
@@ -573,6 +575,29 @@ namespace OutbreakBlazor.Pages
             var attribute = ThisCharacter.PlayerAttributes
                 .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
+            if (ability.BaseAbility.Name == "Autodidact")
+            {
+                var valueReduction = 2;
+
+                if (ability.Tier == 5)
+                {
+                    foreach (var trainingValue in AutodidactTrainingValues)
+                    {
+                        ThisCharacter.TrainingValues.FirstOrDefault(t => t.Id == trainingValue.Id).Value--;
+                        AddToActionsLog($"-1 to {trainingValue.BaseTrainingValue.Name} for removing Autodidact mastery");
+                    }
+                }
+
+                var valueToRemove = AutodidactTrainingValues[^1];
+
+                ThisCharacter.TrainingValues
+                    .First(t => t.BaseTrainingValue.Name == valueToRemove.BaseTrainingValue.Name).Value -= valueReduction;
+                AutodidactTrainingValues.Remove(valueToRemove);
+
+                AddToActionsLog($"Reduced {valueToRemove.BaseTrainingValue.Name} training value by {valueReduction}");
+
+            }
+
             if (ability.Tier == 1)
             {
                 AddToActionsLog($"{ability.BaseAbility.ShortName} cannot be reduced below 1. Remove ability to reduce further.");
@@ -598,7 +623,7 @@ namespace OutbreakBlazor.Pages
                 else if (ability.AdvancedUsing[^1] == "points" || ability.AdvancedUsing[^1] == "pointsDouble")
                 {
                     attribute.Points += 1;
-                    AddToActionsLog($"+1 point added to {ability.BaseAbility.Name} for reducing {ability.BaseAbility.ShortName}");
+                    AddToActionsLog($"+1 point added to {ability.AddedUsingBaseAttributeCode} for reducing {ability.BaseAbility.ShortName}");
                     ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
                 }
 
@@ -667,6 +692,8 @@ namespace OutbreakBlazor.Pages
                 }
             }
 
+            
+
             if (attribute.Points >= 0)
             {
                 ClearHighlightAttribute(attribute);
@@ -688,6 +715,27 @@ namespace OutbreakBlazor.Pages
                 .FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
 
             var result = "";
+
+            if (ability.BaseAbility.Name == "Autodidact")
+            {
+                var valueReduction = 2;
+
+                if (ability.Tier == 5)
+                {
+                    valueReduction = 3;
+                }
+
+                for (int i = 0; i < AutodidactTrainingValues.Count; i++)
+                {
+                    var valueToRemove = AutodidactTrainingValues[i];
+                    ThisCharacter.TrainingValues
+                        .First(t => t.BaseTrainingValue.Name == valueToRemove.BaseTrainingValue.Name).Value -= valueReduction;
+                    AddToActionsLog($"Reduced {valueToRemove.BaseTrainingValue.Name} training value by {valueReduction}");
+
+                }
+
+                AutodidactTrainingValues = new List<PlayerTrainingValue>();
+            }
 
             if (ThisCharacter.TrainingValues != null)
             {
@@ -791,6 +839,8 @@ namespace OutbreakBlazor.Pages
                 PlayerTrainingValuesAdvancedByCivilian = new List<PlayerTrainingValue>();
 
             }
+
+            
         }
 
         protected void InitializePlayerSkills(BaseSkill skill)
@@ -902,7 +952,24 @@ namespace OutbreakBlazor.Pages
             {
                 AddToActionsLog($"{skill.BaseSkill.Name} already advanced 5 times. Further advancement prohibited.");
                 return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
-                //PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
+            }
+
+            var civilian =
+                ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == "Civilian - Profession");
+
+            if (civilian != null)
+            {
+                if (civilian.Tier == 5)
+                {
+                    foreach (var civilianSkill in civilian.SupportsPlayerSkills)
+                    {
+                        if (civilianSkill.BaseSkill.Name == skill.BaseSkill.Name)
+                        {
+                            totalAdvancement++;
+                            AddToActionsLog($"+1 for Civilian Profession Mastery");
+                        }
+                    }
+                }
             }
 
             if (skill.BaseSkill.Type == "Basic")
@@ -1025,7 +1092,6 @@ namespace OutbreakBlazor.Pages
                 {
                     AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is not supported. Advancement is prohibited.");
                     return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
-                    //return await PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
                 }
 
                 totalAdvancement += roll;
@@ -1456,30 +1522,7 @@ namespace OutbreakBlazor.Pages
 
             PlayerAbilityAttributeSelection.Toggle();
 
-            if (ability.BaseAbility.Name == "Support Basic Skill")
-            {
-                OnSupportBasicSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Support Trained Skill")
-            {
-                OnSupportTrainedSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Support Expert Skill")
-            {
-                OnSupportExpertSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Civilian - Profession")
-            {
-                OnSupportCivilianToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Athletic Conditioning <Sport>")
-            {
-                OnSupportAthleticConditioningToggleOn(ability.BaseAbility);
-            }
+            CheckAllUniquePlayerAbilityRequirements(ability);
         }
         protected void OnPlayerAbilityToggleOffUsingGestalt(PlayerAbility ability)
         {
@@ -1513,6 +1556,10 @@ namespace OutbreakBlazor.Pages
 
             PlayerAbilityAttributeSelection.Toggle();
 
+            CheckAllUniquePlayerAbilityRequirements(ability);
+        }
+        protected void CheckAllUniquePlayerAbilityRequirements(PlayerAbility ability)
+        {
             if (ability.BaseAbility.Name == "Support Basic Skill")
             {
                 OnSupportBasicSkillToggleOn(ability.BaseAbility);
@@ -1535,9 +1582,42 @@ namespace OutbreakBlazor.Pages
 
             if (ability.BaseAbility.Name == "Athletic Conditioning <Sport>")
             {
-                OnSupportAthleticConditioningToggleOn(ability.BaseAbility);
+                OnSupportAthleticConditioningToggleOn(ability);
+            }
+
+            if (ability.BaseAbility.Name == "Autodidact")
+            {
+                OnSupportAutodidactToggleOn(ability);
             }
         }
+        protected void CheckSomeUniquePlayerAbilityRequirements(PlayerAbility ability)
+        {
+            if (ability.BaseAbility.Name == "Support Basic Skill")
+            {
+                OnSupportBasicSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Trained Skill")
+            {
+                OnSupportTrainedSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Support Expert Skill")
+            {
+                OnSupportExpertSkillToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Civilian - Profession")
+            {
+                OnSupportCivilianToggleOn(ability.BaseAbility);
+            }
+
+            if (ability.BaseAbility.Name == "Autodidact")
+            {
+                OnSupportAutodidactToggleOn(ability);
+            }
+        }
+
 
         protected void OnSelectAttribute(HelperClass attribute)
         {
@@ -1585,6 +1665,8 @@ namespace OutbreakBlazor.Pages
             AddToActionsLog(result);
 
             PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
+
+            CheckSomeUniquePlayerAbilityRequirements(ability);
         }
         protected void OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
         {
@@ -1613,6 +1695,8 @@ namespace OutbreakBlazor.Pages
             AddToActionsLog(result);
 
             PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
+
+            CheckSomeUniquePlayerAbilityRequirements(ability);
         }
 
         protected BSModal PlayerAbilitySpendSelection { get; set; }
@@ -1640,25 +1724,7 @@ namespace OutbreakBlazor.Pages
 
             PlayerAbilitySpendSelection.Toggle();
 
-            if (ability.BaseAbility.Name == "Support Basic Skill")
-            {
-                OnSupportBasicSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Support Trained Skill")
-            {
-                OnSupportTrainedSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Support Expert Skill")
-            {
-                OnSupportExpertSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Civilian - Profession")
-            {
-                OnSupportCivilianToggleOn(ability.BaseAbility);
-            }
+            CheckSomeUniquePlayerAbilityRequirements(ability);
 
         }
         protected void OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
@@ -1689,27 +1755,7 @@ namespace OutbreakBlazor.Pages
 
             PlayerAbilitySpendSelection.Toggle();
 
-            if (ability.BaseAbility.Name == "Support Basic Skill")
-            {
-                OnSupportBasicSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Support Trained Skill")
-            {
-                OnSupportTrainedSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Support Expert Skill")
-            {
-                OnSupportExpertSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Civilian - Profession")
-            {
-                OnSupportCivilianToggleOn(ability.BaseAbility);
-            }
-
-            
+            CheckSomeUniquePlayerAbilityRequirements(ability);
         }
 
         protected void HighlightAttribute(PlayerAttribute attribute)
@@ -1992,11 +2038,16 @@ namespace OutbreakBlazor.Pages
 
                     Helpers.Add(helper);
                 }
-
-                Helpers = Helpers.OrderBy(s => s.Name).ToList();
             }
 
-            Helpers.Add(new HelperClass() { Name = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot").BaseSkill.ShortName, Style = "unselected" });
+            var pilot = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot");
+
+            if (pilot.IsSupported == false)
+            {
+                Helpers.Add(new HelperClass() { Name = pilot.BaseSkill.ShortName, Style = "unselected" });
+            }
+
+            Helpers = Helpers.OrderBy(s => s.Name).ToList();
 
             ThisBaseAbility = ability;
             SupportCivilian.Toggle();
@@ -2089,17 +2140,21 @@ namespace OutbreakBlazor.Pages
         }
 
         protected BSModal SupportAthleticConditioning { get; set; }
-        protected void OnSupportAthleticConditioningToggleOn(BaseAbility ability)
+        protected void OnSupportAthleticConditioningToggleOn(PlayerAbility ability)
         {
             Helpers = new List<HelperClass>();
             Disable = true;
 
-            ThisBaseAbility = ability;
+            ThisPlayerAbility = ability;
+            ThisBaseAbility = ThisPlayerAbility.BaseAbility;
 
             foreach (var value in SportsList)
             {
-                var helperClass = new HelperClass() { Name = value, Style = "unselected" };
-                Helpers.Add(helperClass);
+                if (ThisCharacterSports.Contains(value) == false)
+                {
+                    var helperClass = new HelperClass() { Name = value, Style = "unselected" };
+                    Helpers.Add(helperClass);
+                }
             }
 
             Helpers = Helpers.OrderBy(s => s.Name).ToList();
@@ -2173,7 +2228,6 @@ namespace OutbreakBlazor.Pages
                 sport.Style = "unselected";
             }
         }
-
         protected void HandleSportAdd(string sport, string skill1, string skill2)
         {
             ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == skill1).IsSupported = true;
@@ -2182,9 +2236,83 @@ namespace OutbreakBlazor.Pages
                 .Add(ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == skill1));
             ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == ThisBaseAbility.Name).SupportsPlayerSkills
                 .Add(ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == skill2));
-            ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == ThisBaseAbility.Name).Notes = sport;
+            ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.Id == ThisPlayerAbility.Id).Notes = sport;
 
             AddToActionsLog($"{sport} supports {skill1} and {skill2}");
+        }
+
+        protected BSModal SupportAutodidact { get; set; }
+        protected void OnSupportAutodidactToggleOn(PlayerAbility ability)
+        {
+            Disable = true;
+            Helpers = new List<HelperClass>();
+            ThisPlayerAbility = ability;
+
+
+            foreach (var playerTrainingValue in ThisCharacter.TrainingValues)
+            {
+                var helper = new HelperClass() {Name = playerTrainingValue.BaseTrainingValue.Name, Style = "unselected"};
+
+                if (AutodidactTrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == helper.Name) == null)
+                {
+                    Helpers.Add(helper);
+                }
+
+                Helpers = Helpers.OrderBy(s => s.Name).ToList();
+            }
+
+            SupportAutodidact.Toggle();
+        }
+        protected void OnSupportAutodidactToggleOff()
+        {
+            Disable = false;
+            Helpers = new List<HelperClass>();
+            var thisPlayerTrainingValue = ThisCharacter.TrainingValues.FirstOrDefault(t => t.Id == ThisPlayerTrainingValue.Id);
+
+            if (ThisPlayerAbility.Tier == 5)
+            {
+                AddToActionsLog("Autodidact mastered!");
+
+                thisPlayerTrainingValue.Value += 3;
+                AddToActionsLog($"Autodidact adds 3 to {thisPlayerTrainingValue.BaseTrainingValue.Name} training value");
+
+                foreach (var trainingValue in AutodidactTrainingValues)
+                {
+                    ThisCharacter.TrainingValues.FirstOrDefault(t => t.Id == trainingValue.Id).Value++;
+                    AddToActionsLog($"+1 to {trainingValue.BaseTrainingValue.Name} for Autodidact mastery!");
+                }
+            }
+            else
+            {
+                thisPlayerTrainingValue.Value += 2;
+                AddToActionsLog($"Autodidact adds 2 to {thisPlayerTrainingValue.BaseTrainingValue.Name} training value");
+
+            }
+
+            AutodidactTrainingValues.Add(thisPlayerTrainingValue);
+
+            SupportAutodidact.Toggle();
+        }
+        protected void OnSelectSingleTrainingValue(HelperClass trainingValue)
+        {
+            if (trainingValue.Style == "unselected")
+            {
+                Disable = false;
+
+                foreach (var helperSkill in Helpers)
+                {
+                    helperSkill.Style = "unselected";
+                }
+
+                trainingValue.Style = "selected";
+
+                ThisPlayerTrainingValue = ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == trainingValue.Name);
+            }
+            else
+            {
+                Disable = true;
+                trainingValue.Style = "unselected";
+            }
         }
 
         protected BSModal StringSelect { get; set; }
