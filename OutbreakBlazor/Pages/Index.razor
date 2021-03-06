@@ -639,71 +639,39 @@ else
                 <p style="font-size: 1.6rem;">Add @ThisBaseAbility.Name using:</p>
                 @if (ThisPlayerAbility.BaseAbility != null)
                 {
-                    <div class="outbreak-attributes-container">
-                        @foreach (var helperClass in Helpers)
-                        {
-                            <button class="btn btn-specialize @helperClass.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectAttribute(helperClass))">@helperClass.Name</button>
-                        }
-                    </div>
-                    <br/>
+                    if (ThisPlayerAbility.BaseAbility.UsesBaseAttributes.Count > 1 && ThisPlayerAbility.Tier == 1)
+                    {
+                        <div class="outbreak-attributes-container">
+                            @foreach (var helperClass in Helpers)
+                            {
+                                <button class="btn btn-specialize @helperClass.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnSelectAttribute(helperClass))">@helperClass.Name</button>
+                            }
+                        </div>
+                        <br />
+                    }
+                    else
+                    {
+                        Disable = false;
+                    }
+
                     @if (ThisPlayerAbility.BaseAbility.IsProfessional)
                     {
                         <BSFormGroup IsCheck="true">
-                            <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction"/>
+                            <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
                             <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
                         </BSFormGroup>
                     }
                 }
-                <br/>
+                <br />
                 <div class="outbreak-button-container">
                     <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit"
-                              @onclick="(() => OnPlayerAbilityToggleOffUsingGestalt(ThisPlayerAbility))"
+                              @onclick="(() => OnPlayerAbilityToggleOff(ThisPlayerAbility, 0))"
                               IsDisabled="@Disable"
                               style="width: 40%">Gestalt Levels</BSButton>
                     <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit"
-                              @onclick="(() => OnPlayerAbilityToggleOffUsingPoints(ThisPlayerAbility))"
+                              @onclick="(() => OnPlayerAbilityToggleOff(ThisPlayerAbility, 1))"
                               IsDisabled="@Disable"
                               style="width: 40%">Attribute Points</BSButton>
-                </div>
-            </BSModalBody>
-        </EditForm>
-    </BSModal>
-
-    <BSModal @ref="PlayerAbilitySingleAttributeAddSpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-        <BSForm Model="ThisPlayerAbility" IsInline="true" OnValidSubmit="UpdateThisPlayerAttribute">
-            <BSModalBody>
-                <p style="font-size: 1.6rem;">Pay for @ThisBaseAbility.Name using:</p>
-                @if (ThisPlayerAbility.BaseAbility.IsProfessional)
-                {
-                    <BSFormGroup IsCheck="true">
-                        <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction"/>
-                        <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
-                    </BSFormGroup>
-                }
-                <br/>
-                <div class="outbreak-button-container">
-                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" @onclick="(() => OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
-                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" @onclick="(() => OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
-                </div>
-            </BSModalBody>
-        </BSForm>
-    </BSModal>
-
-    <BSModal @ref="PlayerAbilitySpendSelection" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
-        <EditForm Model="ThisPlayerAbility" OnValidSubmit="UpdateThisPlayerAttribute">
-            <BSModalBody>
-                <p style="font-size: 1.6rem;">Pay for @ThisBaseAbility.Name using:</p>
-                @if (ThisPlayerAbility.BaseAbility.IsProfessional)
-                {
-                    <BSFormGroup IsCheck="true">
-                        <BSInput Id="HasInstruction" InputType="InputType.Checkbox" @bind-Value="HasInstruction" />
-                        <BSLabel IsCheck="true" For="HasInstruction">With Instruction</BSLabel>
-                    </BSFormGroup>
-                }
-                <br />
-                <div class="outbreak-button-container">
-                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(() => OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(ThisPlayerAbility))" style="width: 40%">Gestalt Levels</BSButton>
-                    <BSButton Class="btn-specialize" ButtonType="ButtonType.Submit" OnClick="(() => OnPlayerAbilitySpendSelectionToggleOffUsingPoints(ThisPlayerAbility))" style="width: 40%">Attribute Points</BSButton>
                 </div>
             </BSModalBody>
         </EditForm>
@@ -827,7 +795,7 @@ else
             <div class="outbreak-container" style="height: 100px; justify-content: flex-start">
                 @foreach (var option in Helpers)
                 {
-                    <button class="btn btn-specialize @option.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnStringSelect(option))">@option.Name</button>
+                    <button class="btn btn-specialize @option.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnHelperSelect(option))">@option.Name</button>
                 }
             </div>
         </BSModalBody>
@@ -848,6 +816,21 @@ else
         </BSModalBody>
         <BSModalFooter>
             <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(OnSupportAutodidactToggleOff)">Ok</BSButton>
+        </BSModalFooter>
+    </BSModal>
+
+    <BSModal @ref="SelectTrainingValue" IsCentered="true" IgnoreClickOnBackdrop="true" IgnoreEscape="true">
+        <BSModalHeader>Choose One</BSModalHeader>
+        <BSModalBody>
+            <div class="outbreak-container" style="height: 100px; justify-content: flex-start">
+                @foreach (var option in Helpers)
+                {
+                    <button class="btn btn-specialize @option.Style outbreak-select-button" style="width: 40%;" @onclick="(() => OnHelperSelect(option))">@option.Name</button>
+                }
+            </div>
+        </BSModalBody>
+        <BSModalFooter>
+            <BSButton Class="btn-specialize" IsDisabled="@Disable" OnClick="(SelectTrainingValueToggleOff)">Ok</BSButton>
         </BSModalFooter>
     </BSModal>
 }

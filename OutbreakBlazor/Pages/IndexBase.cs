@@ -50,8 +50,6 @@ namespace OutbreakBlazor.Pages
         public IPlayerAttributeService PlayerAttributeService { get; set; }
         public IEnumerable<PlayerAttribute> PlayerAttributes { get; set; }
 
-        protected NavigationManager Navigator;
-
         protected string CollapseRightSidebar = "block";
         protected string HighlightStrength = "";
         protected string HighlightPerception = "";
@@ -110,10 +108,9 @@ namespace OutbreakBlazor.Pages
 
         public class HelperClass
         {
-            public string Name;
-            public string Style;
-            public string FormString;
-            public List<string> StringOptions;
+            public string Name ="";
+            public string Style = "unselected";
+            public string FormString = "";
         }
 
         public PlayerCharacter ThisCharacter = new PlayerCharacter();
@@ -130,12 +127,12 @@ namespace OutbreakBlazor.Pages
         };
 
         protected HelperClass Helper = new HelperClass();
-        public string CharacterSheetLocation;
+        public string CharacterSheetLocation = "";
 
-        protected PlayerAttribute StrengthService { get; set; }
-        protected PlayerAttribute PerceptionService { get; set; }
-        protected PlayerAttribute EmpathyService { get; set; }
-        protected PlayerAttribute WillpowerService { get; set; }
+        protected PlayerAttribute StrengthService { get; set; } = new PlayerAttribute();
+        protected PlayerAttribute PerceptionService { get; set; } = new PlayerAttribute();
+        protected PlayerAttribute EmpathyService { get; set; } = new PlayerAttribute();
+        protected PlayerAttribute WillpowerService { get; set; } = new PlayerAttribute();
 
         protected async Task HandleNewCharacterClick()
         {
@@ -512,15 +509,8 @@ namespace OutbreakBlazor.Pages
 
                 if (tempAbility.AddedUsingBaseAttributeCode == null)
                 {
-                    if (tempAbility.BaseAbility.UsesBaseAttributes.Count == 1)
-                    {
-                        tempAbility.AddedUsingBaseAttributeCode = tempAbility.BaseAbility.UsesBaseAttributes[0].Name;
-                        OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOn(tempAbility);
-                    }
-                    else
-                    {
-                        OnPlayerAbilityToggleOn(tempAbility);
-                    }
+                    OnPlayerAbilityToggleOn(tempAbility);
+
                 }
 
                 foreach (var trainingValue in ThisCharacter.TrainingValues)
@@ -548,7 +538,7 @@ namespace OutbreakBlazor.Pages
                 return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
             }
 
-            onPlayerAbilitySpendSelectionToggleOn(ability);
+            OnPlayerAbilityToggleOn(ability);
 
             ability.Tier += 1;
 
@@ -565,6 +555,16 @@ namespace OutbreakBlazor.Pages
                         AddToActionsLog($"{ability.BaseAbility.ShortName} increased Training Value for {trainingValue.BaseTrainingValue.Name} by 1");
                     }
                 }
+            }
+
+            foreach (var value in ability.ImprovesTrainingValues)
+            {
+                var thisTrainingValue =
+                    ThisCharacter.TrainingValues.FirstOrDefault(t =>
+                        t.BaseTrainingValue.Name == value.BaseTrainingValue.Name);
+                thisTrainingValue.Value++;
+
+                AddToActionsLog($"+1 to {thisTrainingValue.BaseTrainingValue.Name} training value");
             }
 
             return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
@@ -598,9 +598,15 @@ namespace OutbreakBlazor.Pages
 
             }
 
+            if (ability.BaseAbility.Name == "Iron Will")
+            {
+                ThisCharacter.Morale--;
+                AddToActionsLog($"-1 to Morale. Morale is now {ThisCharacter.Morale}.");
+            }
+
             if (ability.Tier == 1)
             {
-                AddToActionsLog($"{ability.BaseAbility.ShortName} cannot be reduced below 1. Remove ability to reduce further.");
+                DeletePlayerAbility(ability);
                 return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
             }
 
@@ -610,22 +616,21 @@ namespace OutbreakBlazor.Pages
                 {
                     ThisCharacter.GestaltLevel += (ability.Tier);
                     AddToActionsLog($"+{ability.Tier} Gestalt added for reducing {ability.BaseAbility.ShortName}");
-                    ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
                 }
 
                 else if (ability.AdvancedUsing[^1] == "gestaltDouble")
                 {
                     ThisCharacter.GestaltLevel += (ability.Tier) * 2;
                     AddToActionsLog($"+{ability.Tier*2} Gestalt added for reducing {ability.BaseAbility.ShortName}");
-                    ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
                 }
 
                 else if (ability.AdvancedUsing[^1] == "points" || ability.AdvancedUsing[^1] == "pointsDouble")
                 {
                     attribute.Points += 1;
                     AddToActionsLog($"+1 point added to {ability.AddedUsingBaseAttributeCode} for reducing {ability.BaseAbility.ShortName}");
-                    ability.AdvancedUsing.Remove(ability.AdvancedUsing[^1]);
                 }
+
+                ability.AdvancedUsing.RemoveAt(ability.AdvancedUsing.Count - 1);
 
                 ability.Tier -= 1;
             }
@@ -643,6 +648,16 @@ namespace OutbreakBlazor.Pages
                         }
                     }
                 }
+            }
+
+            foreach (var value in ability.ImprovesTrainingValues)
+            {
+                var thisTrainingValue =
+                    ThisCharacter.TrainingValues.FirstOrDefault(t =>
+                        t.BaseTrainingValue.Name == value.BaseTrainingValue.Name);
+                thisTrainingValue.Value--;
+
+                AddToActionsLog($"{thisTrainingValue.BaseTrainingValue.Name} training value reduced by 1");
             }
 
             if (ability.BaseAbility.Name == "Support Basic Skill" || ability.BaseAbility.Name == "Support Trained Skill" || ability.BaseAbility.Name == "Support Expert Skill")
@@ -750,6 +765,16 @@ namespace OutbreakBlazor.Pages
                         }
                     }
                 }
+            }
+
+            foreach (var value in ability.ImprovesTrainingValues)
+            {
+                var thisTrainingValue =
+                    ThisCharacter.TrainingValues.FirstOrDefault(t =>
+                        t.BaseTrainingValue.Name == value.BaseTrainingValue.Name);
+                thisTrainingValue.Value-= ability.Tier;
+
+                AddToActionsLog($"{thisTrainingValue.BaseTrainingValue.Name} training value reduced by {ability.Tier}");
             }
 
             for (int i = ability.AdvancedUsing.Count-1; i > -1; i--)
@@ -1415,55 +1440,55 @@ namespace OutbreakBlazor.Pages
             AddSkills = !AddSkills;
         }
 
-        protected BSModal GestaltDescription { get; set; }
+        protected BSModal GestaltDescription { get; set; } = new BSModal();
         protected void ToggleGestaltDescription(MouseEventArgs e)
         {
             GestaltDescription.Toggle();
         }
 
-        protected BSModal SurvivalPointsDescription { get; set; }
+        protected BSModal SurvivalPointsDescription { get; set; } = new BSModal();
         protected void ToggleSurvivalPointsDescription(MouseEventArgs e)
         {
             SurvivalPointsDescription.Toggle();
         }
 
-        protected BSModal CompetencePointsDescription { get; set; }
+        protected BSModal CompetencePointsDescription { get; set; } = new BSModal();
         protected void ToggleCompetencePointsDescription(MouseEventArgs e)
         {
             CompetencePointsDescription.Toggle();
         }
 
-        protected BSModal StrengthDescription { get; set; }
+        protected BSModal StrengthDescription { get; set; } = new BSModal();
         protected void OnStrengthToggle(MouseEventArgs e)
         {
             StrengthDescription.Toggle();
         }
 
-        protected BSModal PerceptionDescription { get; set; }
+        protected BSModal PerceptionDescription { get; set; } = new BSModal();
         protected void OnPerceptionToggle(MouseEventArgs e)
         {
             PerceptionDescription.Toggle();
         }
 
-        protected BSModal EmpathyDescription { get; set; }
+        protected BSModal EmpathyDescription { get; set; } = new BSModal();
         protected void OnEmpathyToggle(MouseEventArgs e)
         {
             EmpathyDescription.Toggle();
         }
 
-        protected BSModal WillpowerDescription { get; set; }
+        protected BSModal WillpowerDescription { get; set; } = new BSModal();
         protected void OnWillpowerToggle(MouseEventArgs e)
         {
             WillpowerDescription.Toggle();
         }
 
-        protected BSModal WelcomeModal { get; set; }
+        protected BSModal WelcomeModal { get; set; } = new BSModal();
         protected void ToggleWelcomeModal(MouseEventArgs e)
         {
             WelcomeModal.Toggle();
         }
 
-        protected BSModal CharacterSheetModal { get; set; }
+        protected BSModal CharacterSheetModal { get; set; } = new BSModal();
         protected void ToggleCharacterSheetModal(MouseEventArgs e)
         {
             PlayerCharacterService.UpdatePlayerCharacter(ThisCharacter.Id, ThisCharacter);
@@ -1472,7 +1497,7 @@ namespace OutbreakBlazor.Pages
             CharacterSheetModal.Toggle();
         }
 
-        protected BSModal BaseAbilityDescription { get; set; }
+        protected BSModal BaseAbilityDescription { get; set; } = new BSModal();
         protected void OnBaseAbilityToggleOn(BaseAbility ability)
         {
             ThisBaseAbility = ability;
@@ -1483,15 +1508,20 @@ namespace OutbreakBlazor.Pages
             BaseAbilityDescription.Toggle();
         }
 
-        protected BSModal PlayerAbilityAttributeSelection { get; set; }
+        protected BSModal PlayerAbilityAttributeSelection { get; set; } = new BSModal();
         protected void OnPlayerAbilityToggleOn(PlayerAbility ability)
         {
             Disable = true;
             Helpers = new List<HelperClass>();
 
+            if (ability.BaseAbility.UsesBaseAttributes.Count == 1)
+            {
+                ability.AddedUsingBaseAttributeCode = ability.BaseAbility.UsesBaseAttributes[0].Name;
+            }
+
             foreach (var attribute in ability.BaseAbility.UsesBaseAttributes)
             {
-                var helperClass = new HelperClass {Name = attribute.Name, Style = "unselected"};
+                var helperClass = new HelperClass { Name = attribute.Name };
                 Helpers.Add(helperClass);
             }
 
@@ -1500,66 +1530,108 @@ namespace OutbreakBlazor.Pages
 
             PlayerAbilityAttributeSelection.Toggle();
         }
-        protected void OnPlayerAbilityToggleOffUsingPoints(PlayerAbility ability)
-        {
-            Helpers = new List<HelperClass>();
+        protected void OnPlayerAbilityToggleOff(PlayerAbility ability, int resourceId)
+       {
+           var resource = "";
 
-            ability.AddedUsingBaseAttributeCode = ThisPlayerAttribute.BaseAttribute.Name;
-
-            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
-
-            attribute.Points -= 1;
-            ability.AdvancedUsing.Add("points");
-            HasInstruction = false;
-
-            if (attribute.Points < 0)
+            if (resourceId == 0)
             {
-                HighlightAttribute(attribute);
+                resource = "gestalt";
+            }
+            else if (resourceId == 1)
+            {
+                resource = "points";
             }
 
-            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to add {ability.BaseAbility.ShortName}";
-            AddToActionsLog(result);
+            Helpers = new List<HelperClass>();
+
+            if (ability.BaseAbility.UsesBaseAttributes.Count > 1)
+            {
+                ability.AddedUsingBaseAttributeCode = ThisPlayerAttribute.BaseAttribute.Name;
+            }
+
+            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
+            
+
+            if (resource.ToLower() == "gestalt")
+            {
+                var spend = 0;
+
+                if (ability.Tier == 1)
+                {
+                    spend = 5 - attribute.Bonus;
+                }
+                else
+                {
+                    spend = ability.Tier;
+                }
+
+
+                ThisCharacter.GestaltLevel -= spend;
+                ability.AdvancedUsing.Add("gestalt");
+                var result = $"Spent {spend} Gestalt";
+
+                if (ability.BaseAbility.IsProfessional && HasInstruction == false)
+                {
+                    ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
+                    ability.AdvancedUsing[^1] += "Double";
+                    result += $" + {spend} Gestalt (prof. w/o instr.)";
+                }
+
+                result += $" to add {ability.BaseAbility.ShortName} linked to {attribute.BaseAttribute.Name}";
+                AddToActionsLog(result);
+
+                if (ThisCharacter.GestaltLevel < 0)
+                {
+                    HighlightGestaltValue();
+                }
+            }
+            else if (resource.ToLower() == "points")
+            {
+                attribute.Points -= 1;
+                ability.AdvancedUsing.Add("points");
+
+                var result = $"Spent 1 {attribute.BaseAttribute.Name} point to add {ability.BaseAbility.ShortName}";
+                AddToActionsLog(result);
+
+                if (attribute.Points < 0)
+                {
+                    HighlightAttribute(attribute);
+                }
+            }
+
+            foreach (var trainingValue in ability.ImprovesTrainingValues)
+            {
+                trainingValue.Value++;
+                AddToActionsLog($"{ability.BaseAbility.Name} increased Training Value for {trainingValue.BaseTrainingValue.Name} by 1");
+            }
+
+            HasInstruction = false;
 
             PlayerAbilityAttributeSelection.Toggle();
 
-            CheckAllUniquePlayerAbilityRequirements(ability);
+            CheckUniquePlayerAbilityRequirements(ability);
         }
-        protected void OnPlayerAbilityToggleOffUsingGestalt(PlayerAbility ability)
+        protected void CheckUniquePlayerAbilityRequirements(PlayerAbility ability)
         {
-            Helpers = new List<HelperClass>();
-
-            ability.AddedUsingBaseAttributeCode = ThisPlayerAttribute.BaseAttribute.Name;
-
-            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
-            var spend = 5 - attribute.Bonus;
-
-            ThisCharacter.GestaltLevel -= spend;
-            ability.AdvancedUsing.Add("gestalt");
-            var result = $"Spent {spend} Gestalt";
-
-            if (ability.BaseAbility.IsProfessional && HasInstruction == false)
+            if (ability.Tier == 1)
             {
-                ThisCharacter.GestaltLevel -= (5 - attribute.Bonus);
-                ability.AdvancedUsing[^1] += "Double";
-                result += $" + {spend} Gestalt (prof. w/o instr.)";
+                if (ability.BaseAbility.Name == "Athletic Conditioning <Sport>")
+                {
+                    OnSupportAthleticConditioningToggleOn(ability);
+                }
+
+                if (ability.BaseAbility.Name == "Caged Wisdom")
+                {
+                    var tv1 = BaseTrainingValues.FirstOrDefault(t => t.Name == "Bludgeon");
+                    var tv2 = BaseTrainingValues.FirstOrDefault(t => t.Name == "Piercing");
+                    var tv3 = BaseTrainingValues.FirstOrDefault(t => t.Name == "Slashing");
+                    var trainingValues = new List<BaseTrainingValue>() { tv1, tv2, tv3 };
+
+                    SelectTrainingValueToggleOn(trainingValues, ability);
+                }
             }
 
-            HasInstruction = false;
-
-            if (ThisCharacter.GestaltLevel < 0)
-            {
-                HighlightGestaltValue();
-            }
-
-            result += $" to add {ability.BaseAbility.ShortName} linked to {attribute.BaseAttribute.Name}";
-            AddToActionsLog(result);
-
-            PlayerAbilityAttributeSelection.Toggle();
-
-            CheckAllUniquePlayerAbilityRequirements(ability);
-        }
-        protected void CheckAllUniquePlayerAbilityRequirements(PlayerAbility ability)
-        {
             if (ability.BaseAbility.Name == "Support Basic Skill")
             {
                 OnSupportBasicSkillToggleOn(ability.BaseAbility);
@@ -1580,44 +1652,17 @@ namespace OutbreakBlazor.Pages
                 OnSupportCivilianToggleOn(ability.BaseAbility);
             }
 
-            if (ability.BaseAbility.Name == "Athletic Conditioning <Sport>")
-            {
-                OnSupportAthleticConditioningToggleOn(ability);
-            }
-
             if (ability.BaseAbility.Name == "Autodidact")
             {
                 OnSupportAutodidactToggleOn(ability);
             }
-        }
-        protected void CheckSomeUniquePlayerAbilityRequirements(PlayerAbility ability)
-        {
-            if (ability.BaseAbility.Name == "Support Basic Skill")
-            {
-                OnSupportBasicSkillToggleOn(ability.BaseAbility);
-            }
 
-            if (ability.BaseAbility.Name == "Support Trained Skill")
+            if (ability.BaseAbility.Name == "Iron Will")
             {
-                OnSupportTrainedSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Support Expert Skill")
-            {
-                OnSupportExpertSkillToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Civilian - Profession")
-            {
-                OnSupportCivilianToggleOn(ability.BaseAbility);
-            }
-
-            if (ability.BaseAbility.Name == "Autodidact")
-            {
-                OnSupportAutodidactToggleOn(ability);
+                ThisCharacter.Morale++;
+                AddToActionsLog($"Iron Will add 1 to Morale. Morale is now {ThisCharacter.Morale}.");
             }
         }
-
 
         protected void OnSelectAttribute(HelperClass attribute)
         {
@@ -1639,123 +1684,6 @@ namespace OutbreakBlazor.Pages
                 Disable = true;
                 attribute.Style = "unselected";
             }
-        }
-
-        protected BSModal PlayerAbilitySingleAttributeAddSpendSelection { get; set; }
-        protected void OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOn(PlayerAbility ability)
-        {
-            ThisPlayerAbility = ability;
-            ThisBaseAbility = ThisPlayerAbility.BaseAbility;
-            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
-        }
-        protected void OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingPoints(PlayerAbility ability)
-        {
-            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
-
-            attribute.Points -= 1;
-            ability.AdvancedUsing.Add("points");
-            HasInstruction = false;
-
-            if (attribute.Points < 0)
-            {
-                HighlightAttribute(attribute);
-            }
-
-            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to add {ability.BaseAbility.ShortName}";
-            AddToActionsLog(result);
-
-            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
-
-            CheckSomeUniquePlayerAbilityRequirements(ability);
-        }
-        protected void OnPlayerAbilitySingleAttributeAddSpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
-        {
-            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
-            var spend = 5 - attribute.Bonus;
-
-            ThisCharacter.GestaltLevel -= spend;
-            ability.AdvancedUsing.Add("gestalt");
-            var result = $"Spent {spend} Gestalt";
-
-            if (ability.BaseAbility.IsProfessional && HasInstruction == false)
-            {
-                ThisCharacter.GestaltLevel -= spend;
-                ability.AdvancedUsing[^1] += "Double";
-                result += $" + {spend} Gestalt (prof. w/o instr.)";
-            }
-
-            HasInstruction = false;
-
-            if (ThisCharacter.GestaltLevel < 0)
-            {
-                HighlightGestaltValue();
-            }
-
-            result += $" to add {ability.BaseAbility.ShortName} linked to {attribute.BaseAttribute.Name}";
-            AddToActionsLog(result);
-
-            PlayerAbilitySingleAttributeAddSpendSelection.Toggle();
-
-            CheckSomeUniquePlayerAbilityRequirements(ability);
-        }
-
-        protected BSModal PlayerAbilitySpendSelection { get; set; }
-        protected void onPlayerAbilitySpendSelectionToggleOn(PlayerAbility ability)
-        {
-            ThisPlayerAbility = ability;
-            ThisBaseAbility = ThisPlayerAbility.BaseAbility;
-            PlayerAbilitySpendSelection.Toggle();
-        }
-        protected void OnPlayerAbilitySpendSelectionToggleOffUsingPoints(PlayerAbility ability)
-        {
-            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
-
-            attribute.Points -= 1;
-            ability.AdvancedUsing.Add("points");
-            HasInstruction = false;
-
-            if (attribute.Points < 0)
-            {
-                HighlightAttribute(attribute);
-            }
-
-            var result = $"Spent 1 {attribute.BaseAttribute.Name} point to advance {ability.BaseAbility.ShortName} to tier {ability.Tier}";
-            AddToActionsLog(result);
-
-            PlayerAbilitySpendSelection.Toggle();
-
-            CheckSomeUniquePlayerAbilityRequirements(ability);
-
-        }
-        protected void OnPlayerAbilitySpendSelectionToggleOffUsingGestalt(PlayerAbility ability)
-        {
-            
-            var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
-            var result = $"Spent {ability.Tier} Gestalt";
-
-            ThisCharacter.GestaltLevel -= ability.Tier;
-            ability.AdvancedUsing.Add("gestalt");
-
-            if (ability.BaseAbility.IsProfessional && HasInstruction == false)
-            {
-                ThisCharacter.GestaltLevel -= ability.Tier;
-                ability.AdvancedUsing[^1] += "Double";
-                result += $" + {ability.Tier} Gestalt (prof. w/o instr.)";
-            }
-
-            HasInstruction = false;
-
-            if (ThisCharacter.GestaltLevel < 0)
-            {
-                HighlightGestaltValue();
-            }
-
-            result += $" to advance {ability.BaseAbility.ShortName} to tier {ability.Tier}";
-            AddToActionsLog(result);
-
-            PlayerAbilitySpendSelection.Toggle();
-
-            CheckSomeUniquePlayerAbilityRequirements(ability);
         }
 
         protected void HighlightAttribute(PlayerAttribute attribute)
@@ -1817,7 +1745,7 @@ namespace OutbreakBlazor.Pages
             return await PlayerAbilityService.UpdatePlayerAbility(ThisPlayerAbility.Id, ThisPlayerAbility);
         }
 
-        protected BSModal BaseSkillDescription { get; set; }
+        protected BSModal BaseSkillDescription { get; set; } = new BSModal();
         protected void OnBaseSkillToggleOn(BaseSkill skill)
         {
             ThisBaseSkill = skill;
@@ -1828,7 +1756,7 @@ namespace OutbreakBlazor.Pages
             BaseSkillDescription.Toggle();
         }
 
-        protected BSModal SpecializePlayerSkill { get; set; }
+        protected BSModal SpecializePlayerSkill { get; set; } = new BSModal();
         protected void OnSpecializePlayerSkillToggleOn(PlayerSkill skill)
         {
             ThisPlayerSkill = skill;
@@ -1893,7 +1821,7 @@ namespace OutbreakBlazor.Pages
 
         }
 
-        protected BSModal SupportBasicSkill { get; set; }
+        protected BSModal SupportBasicSkill { get; set; } = new BSModal();
         protected void OnSupportBasicSkillToggleOn(BaseAbility ability)
         {
             Disable = true;
@@ -1929,7 +1857,7 @@ namespace OutbreakBlazor.Pages
             SupportBasicSkill.Toggle();
         }
 
-        protected BSModal SupportTrainedSkill { get; set; }
+        protected BSModal SupportTrainedSkill { get; set; } = new BSModal();
         protected void OnSupportTrainedSkillToggleOn(BaseAbility ability)
         {
             Disable = true;
@@ -1965,7 +1893,7 @@ namespace OutbreakBlazor.Pages
             SupportTrainedSkill.Toggle();
         }
 
-        protected BSModal SupportExpertSkill { get; set; }
+        protected BSModal SupportExpertSkill { get; set; } = new BSModal();
         protected void OnSupportExpertSkillToggleOn(BaseAbility ability)
         {
             Disable = true;
@@ -2022,7 +1950,7 @@ namespace OutbreakBlazor.Pages
             }
         }
 
-        protected BSModal SupportCivilian { get; set; }
+        protected BSModal SupportCivilian { get; set; } = new BSModal();
         protected void OnSupportCivilianToggleOn(BaseAbility ability)
         {
             Disable = true;
@@ -2070,7 +1998,7 @@ namespace OutbreakBlazor.Pages
             OnSupportCivilianTrainingValuesToggleOn();
         }
 
-        protected BSModal SupportCivilianTrainingValues { get; set; }
+        protected BSModal SupportCivilianTrainingValues { get; set; } = new BSModal();
         protected void OnSupportCivilianTrainingValuesToggleOn()
         {
             Helpers = new List<HelperClass>();
@@ -2139,7 +2067,7 @@ namespace OutbreakBlazor.Pages
             }
         }
 
-        protected BSModal SupportAthleticConditioning { get; set; }
+        protected BSModal SupportAthleticConditioning { get; set; } = new BSModal();
         protected void OnSupportAthleticConditioningToggleOn(PlayerAbility ability)
         {
             Helpers = new List<HelperClass>();
@@ -2186,7 +2114,8 @@ namespace OutbreakBlazor.Pages
             }
             else if (ThisSport == "Football/Rugby")
             {
-                StringSelectToggleOn("Grapple", "Throw");
+                var strings = new List<string>() {"Grapple", "Throw"};
+                StringSelectToggleOn(strings);
             }
             else if (ThisSport == "Golf")
             {
@@ -2241,7 +2170,7 @@ namespace OutbreakBlazor.Pages
             AddToActionsLog($"{sport} supports {skill1} and {skill2}");
         }
 
-        protected BSModal SupportAutodidact { get; set; }
+        protected BSModal SupportAutodidact { get; set; } = new BSModal();
         protected void OnSupportAutodidactToggleOn(PlayerAbility ability)
         {
             Disable = true;
@@ -2315,17 +2244,18 @@ namespace OutbreakBlazor.Pages
             }
         }
 
-        protected BSModal StringSelect { get; set; }
-        protected void StringSelectToggleOn(string string1, string string2)
+        protected BSModal StringSelect { get; set; } = new BSModal();
+        protected void StringSelectToggleOn(List<string> strings)
         {
-            var helper1 = new HelperClass() {Name = string1, Style = "unselected"};
-            var helper2 = new HelperClass() {Name = string2, Style = "unselected"};
+            Helpers = new List<HelperClass>();
 
-            Helpers = new List<HelperClass>() {helper1, helper2};
-
+            foreach (var s in strings)
+            {
+                Helpers.Add(new HelperClass(){Name = s, Style = "unselected"});    
+            }
+            
             StringSelect.Toggle();
         }
-
         protected void StringSelectToggleOff()
         {
             if (Helper.Name == "Grapple" || Helper.Name == "Throw")
@@ -2333,10 +2263,16 @@ namespace OutbreakBlazor.Pages
                 HandleSportAdd("Football/Rugby", "Resist Pain", Helper.Name);
             }
 
+            if (Helper.Name == "Bludgeon" || Helper.Name == "Piercing" || Helper.Name == "Slashing")
+            {
+                ThisPlayerAbility.ImprovesTrainingValues.Add(ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == Helper.Name));
+            }
+
+            Helper = new HelperClass();
+
             StringSelect.Toggle();
         }
-
-        protected void OnStringSelect(HelperClass option)
+        protected void OnHelperSelect(HelperClass option)
         {
             if (option.Style == "unselected")
             {
@@ -2356,6 +2292,37 @@ namespace OutbreakBlazor.Pages
                 Disable = true;
                 option.Style = "unselected";
             }
+        }
+
+
+        protected BSModal SelectTrainingValue { get; set; } = new BSModal();
+        protected void SelectTrainingValueToggleOn(List<BaseTrainingValue> trainingValues, PlayerAbility playerAbility)
+        {
+            Helpers = new List<HelperClass>();
+            ThisPlayerAbility = playerAbility;
+            
+            foreach (var value in trainingValues)
+            {
+                Helpers.Add(new HelperClass(){Name = value.Name, Style = "unselected"});
+            }
+
+            SelectTrainingValue.Toggle();
+        }
+
+        protected void SelectTrainingValueToggleOff()
+        {
+            var playerAbility = ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.Id == ThisPlayerAbility.Id);
+            var trainingValue = ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == Helper.Name);
+
+            playerAbility.ImprovesTrainingValues.Add(trainingValue);
+
+            foreach (var value in playerAbility.ImprovesTrainingValues)
+            {
+                value.Value++;
+                AddToActionsLog($"+1 to {value.BaseTrainingValue.Name} training value");
+            }
+
+            SelectTrainingValue.Toggle();
         }
 
         protected Array CsvStringToArray(string values)

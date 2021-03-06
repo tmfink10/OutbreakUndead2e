@@ -16,5 +16,6 @@ namespace OutbreakModels.Models
         public List<PlayerSkill> SupportsPlayerSkills { get; set; } = new List<PlayerSkill>();
         public string AddedUsingBaseAttributeCode { get; set; }
         public List<string> AdvancedUsing { get; set; } = new List<string>();
+        public List<PlayerTrainingValue> ImprovesTrainingValues { get; set; } = new List<PlayerTrainingValue>();
     }
 }
