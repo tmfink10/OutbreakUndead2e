@@ -564,7 +564,7 @@ namespace OutbreakBlazor.Pages
                         t.BaseTrainingValue.Name == value.BaseTrainingValue.Name);
                 thisTrainingValue.Value++;
 
-                AddToActionsLog($"+1 to {thisTrainingValue.BaseTrainingValue.Name} training value");
+                AddToActionsLog($"{ability.BaseAbility.Name} increased Training Value for {thisTrainingValue.BaseTrainingValue.Name} by 1");
             }
 
             return await PlayerAbilityService.UpdatePlayerAbility(ability.Id, ability);
@@ -1532,7 +1532,8 @@ namespace OutbreakBlazor.Pages
         }
         protected void OnPlayerAbilityToggleOff(PlayerAbility ability, int resourceId)
        {
-           var resource = "";
+            var resource = "";
+            var addOrAdvance = "";
 
             if (resourceId == 0)
             {
@@ -1551,22 +1552,22 @@ namespace OutbreakBlazor.Pages
             }
 
             var attribute = ThisCharacter.PlayerAttributes.FirstOrDefault(a => a.BaseAttribute.Name == ability.AddedUsingBaseAttributeCode);
-            
+
+            var spend = 0;
+
+            if (ability.Tier == 1)
+            {
+                spend = 5 - attribute.Bonus;
+                addOrAdvance = "add";
+            }
+            else
+            {
+                spend = ability.Tier;
+                addOrAdvance = "advance";
+            }
 
             if (resource.ToLower() == "gestalt")
             {
-                var spend = 0;
-
-                if (ability.Tier == 1)
-                {
-                    spend = 5 - attribute.Bonus;
-                }
-                else
-                {
-                    spend = ability.Tier;
-                }
-
-
                 ThisCharacter.GestaltLevel -= spend;
                 ability.AdvancedUsing.Add("gestalt");
                 var result = $"Spent {spend} Gestalt";
@@ -1578,7 +1579,7 @@ namespace OutbreakBlazor.Pages
                     result += $" + {spend} Gestalt (prof. w/o instr.)";
                 }
 
-                result += $" to add {ability.BaseAbility.ShortName} linked to {attribute.BaseAttribute.Name}";
+                result += $" to {addOrAdvance} {ability.BaseAbility.ShortName}";
                 AddToActionsLog(result);
 
                 if (ThisCharacter.GestaltLevel < 0)
@@ -1591,19 +1592,13 @@ namespace OutbreakBlazor.Pages
                 attribute.Points -= 1;
                 ability.AdvancedUsing.Add("points");
 
-                var result = $"Spent 1 {attribute.BaseAttribute.Name} point to add {ability.BaseAbility.ShortName}";
+                var result = $"Spent 1 {attribute.BaseAttribute.Name} point to {addOrAdvance} {ability.BaseAbility.ShortName}";
                 AddToActionsLog(result);
 
                 if (attribute.Points < 0)
                 {
                     HighlightAttribute(attribute);
                 }
-            }
-
-            foreach (var trainingValue in ability.ImprovesTrainingValues)
-            {
-                trainingValue.Value++;
-                AddToActionsLog($"{ability.BaseAbility.Name} increased Training Value for {trainingValue.BaseTrainingValue.Name} by 1");
             }
 
             HasInstruction = false;
@@ -2319,7 +2314,7 @@ namespace OutbreakBlazor.Pages
             foreach (var value in playerAbility.ImprovesTrainingValues)
             {
                 value.Value++;
-                AddToActionsLog($"+1 to {value.BaseTrainingValue.Name} training value");
+                AddToActionsLog($"{playerAbility.BaseAbility.Name} increased Training Value for {value.BaseTrainingValue.Name} by 1");
             }
 
             SelectTrainingValue.Toggle();

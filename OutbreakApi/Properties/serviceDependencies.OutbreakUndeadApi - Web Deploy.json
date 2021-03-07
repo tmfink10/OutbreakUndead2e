@@ -1,13 +1,7 @@
 {
   "dependencies": {
-    "mssql2": {
-      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/outbreakundeadsql/databases/OutbreakDb",
-      "type": "mssql.azure",
-      "connectionId": "DefaultConnection2",
-      "secretStore": "AzureAppSettings"
-    },
     "mssql1": {
-      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/outbreakundeadsql/databases/OutbreakDb",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/outbreakundeadsql/databases/OutbreakUndeadDb",
       "type": "mssql.azure",
       "connectionId": "DefaultConnection",
       "secretStore": "AzureAppSettings"

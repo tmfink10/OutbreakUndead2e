@@ -1,9 +1,5 @@
 {
   "dependencies": {
-    "mssql2": {
-      "type": "mssql",
-      "connectionId": "DefaultConnection2"
-    },
     "mssql1": {
       "type": "mssql",
       "connectionId": "DefaultConnection"
