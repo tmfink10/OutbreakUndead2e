@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using BlazorStrap;
 using ceTe.DynamicPDF;
@@ -82,6 +84,9 @@ namespace OutbreakBlazor.Pages
         protected List<PlayerTrainingValue> PlayerTrainingValues = new List<PlayerTrainingValue>();
         protected List<PlayerTrainingValue> PlayerTrainingValuesAdvancedByCivilian = new List<PlayerTrainingValue>();
         protected List<PlayerTrainingValue> AutodidactTrainingValues = new List<PlayerTrainingValue>();
+        protected List<int> WeekendWarriorSurvivalAdvancements = new List<int>();
+        protected List<int> WeekendWarriorNavigationAdvancements = new List<int>();
+        protected List<string> WeekendWarriorAdvancements = new List<string>();
 
         protected override async Task OnInitializedAsync()
         {
@@ -447,7 +452,7 @@ namespace OutbreakBlazor.Pages
 
         protected async Task HandleOnValidBaseAbilitySubmit()
         {
-            if (!string.IsNullOrEmpty(Helper.FormString))
+            if (string.IsNullOrEmpty(Helper.FormString) == false)
             {
                 var tempAbility = new PlayerAbility
                 {
@@ -502,6 +507,30 @@ namespace OutbreakBlazor.Pages
                                 tempAbility.SupportsPlayerSkills.Add(skill);
                             }
                         }
+
+                        if (name == "Pilot <Bicycle>" && tempAbility.BaseAbility.Name == "BMX")
+                        {
+                            var skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot");
+                            await SkillSpecializationFactory(skill, tempAbility, "Bicycle");
+                        }
+
+                        if (name == "Pilot <Motorcycle>" && tempAbility.BaseAbility.Name == "Biker")
+                        {
+                            var skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Pilot");
+                            await SkillSpecializationFactory(skill, tempAbility, "Motorcycle");
+                        }
+
+                        if (name == "Craft/Construct/Engineer (Structural)" && tempAbility.BaseAbility.Name == "Civil Engineering - Profession")
+                        {
+                            var skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Craft/Construct/Engineer");
+                            await SkillSpecializationFactory(skill, tempAbility, "Structural");
+                        }
+
+                        if (name == "Science <Farming>" && tempAbility.BaseAbility.Name == "Farmer/Rancher - Profession")
+                        {
+                            var skill = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Science");
+                            await SkillSpecializationFactory(skill, tempAbility, "Farming");
+                        }
                     }
                 }
 
@@ -510,7 +539,6 @@ namespace OutbreakBlazor.Pages
                 if (tempAbility.AddedUsingBaseAttributeCode == null)
                 {
                     OnPlayerAbilityToggleOn(tempAbility);
-
                 }
 
                 foreach (var trainingValue in ThisCharacter.TrainingValues)
@@ -526,6 +554,39 @@ namespace OutbreakBlazor.Pages
                 }
 
                 ThisCharacter.PlayerAbilities.Add(tempAbility);
+            }
+        }
+
+        protected async Task SkillSpecializationFactory(PlayerSkill playerSkill, PlayerAbility playerAbility, string specialty)
+        {
+            var newSkill = new PlayerSkill()
+            {
+                BaseSkill = playerSkill.BaseSkill,
+                Value = playerSkill.Value,
+                Advancements = playerSkill.Advancements,
+                AdvancementsList = playerSkill.AdvancementsList,
+                PlayerCharacter = playerSkill.PlayerCharacter,
+                PlayerCharacterId = playerSkill.PlayerCharacterId,
+                Notes = playerSkill.Notes,
+                AttributeValue = playerSkill.AttributeValue,
+                IsSpecialized = true,
+                IsSupported = true,
+                Specialty = specialty
+            };
+
+            newSkill = await PlayerSkillService.CreatePlayerSkill(newSkill);
+
+            playerAbility.SupportsPlayerSkills.Add(newSkill);
+            ThisCharacter.PlayerSkills.Add(newSkill);
+            ThisCharacter.SpecializedPlayerSkills.Add(newSkill);
+
+            if (SpecializedSkillsLeftTable.Count <= SpecializedSkillsRightTable.Count)
+            {
+                SpecializedSkillsLeftTable.Add(newSkill);
+            }
+            else
+            {
+                SpecializedSkillsRightTable.Add(newSkill);
             }
         }
         protected async Task<PlayerAbility> HandleIncreasePlayerAbility(PlayerAbility ability)
@@ -596,6 +657,30 @@ namespace OutbreakBlazor.Pages
 
                 AddToActionsLog($"Reduced {valueToRemove.BaseTrainingValue.Name} training value by {valueReduction}");
 
+            }
+
+            if (ability.BaseAbility.Name == "Weekend Warrior")
+            {
+                var removeAt = 0;
+                var removeFrom = new PlayerSkill();
+
+                if (WeekendWarriorAdvancements[^1] == "Survival")
+                {
+                    removeAt = WeekendWarriorSurvivalAdvancements[^1];
+                    removeFrom = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Survival");
+                }
+                else if (WeekendWarriorAdvancements[^1] == "Navigation")
+                {
+                    removeAt = WeekendWarriorNavigationAdvancements[^1];
+                    removeFrom = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Navigation");
+                }
+
+                removeFrom.Value -= removeFrom.AdvancementsList[removeAt];
+                removeFrom.Advancements--;
+
+                AddToActionsLog($"Removing advancement from Weekend Warrior reduced value of {removeFrom.BaseSkill.Name} by {removeFrom.AdvancementsList[removeAt]}");
+
+                removeFrom.AdvancementsList.RemoveAt(removeAt);
             }
 
             if (ability.BaseAbility.Name == "Iron Will")
@@ -1106,16 +1191,16 @@ namespace OutbreakBlazor.Pages
                 if (skill.IsSpecialized && skill.IsSupported)
                 {
                     roll = RollD5();
-                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is both specialized and supported");
+                    AddToActionsLog($"{skill.BaseSkill.Name} is an {skill.BaseSkill.Type} skill and is both specialized and supported");
                 }
                 else if (skill.IsSupported)
                 {
                     roll = RollD5("Lowest");
-                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is supported");
+                    AddToActionsLog($"{skill.BaseSkill.Name} is an {skill.BaseSkill.Type} skill and is supported");
                 }
                 else
                 {
-                    AddToActionsLog($"{skill.BaseSkill.Name} is a {skill.BaseSkill.Type} skill and is not supported. Advancement is prohibited.");
+                    AddToActionsLog($"{skill.BaseSkill.Name} is an {skill.BaseSkill.Type} skill and is not supported. Advancement is prohibited.");
                     return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
                 }
 
@@ -1132,36 +1217,21 @@ namespace OutbreakBlazor.Pages
                             if (ability.BaseAbility.AdvancesSkills)
                             {
                                 totalAdvancement += ability.Tier;
-                                AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
+                                var result =
+                                    $"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}";
+                                if (skill.Specialty != null)
+                                {
+                                    result += $" ({skill.Specialty})";
+                                }
+                                AddToActionsLog(result);
                             }
                         }
                     }
 
                     if (!string.IsNullOrWhiteSpace(skill.Specialty))
                     {
-                        if (ability.BaseAbility.Name == "BMX")
-                        {
-                            if (skill.Specialty.ToLower() == "bicycle" || 
-                                skill.Specialty.ToLower() == "bicycle" || 
-                                skill.Specialty.ToLower() == "bike" || 
-                                skill.Specialty.ToLower() == "bikes")
-                            {
-                                totalAdvancement += ability.Tier;
-                                AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
-                            }
-                        }
-                        else if (ability.BaseAbility.Name == "Biker")
-                        {
-                            if (skill.Specialty.ToLower() == "motorcycle" || 
-                                skill.Specialty.ToLower() == "motorcycles" || 
-                                skill.Specialty.ToLower() == "dirt bike" || 
-                                skill.Specialty.ToLower() == "dirt bikes")
-                            {
-                                totalAdvancement += ability.Tier;
-                                AddToActionsLog($"{ability.BaseAbility.Name} added {ability.Tier} to advancement of {skill.BaseSkill.Name}");
-                            }
-                        }
-                        else if (ability.BaseAbility.Name == "Training, Vehicle/Vessel")
+                        
+                        if (ability.BaseAbility.Name == "Training, Vehicle/Vessel")
                         {
                             if (skill.BaseSkill.Name == "Pilot")
                             {
@@ -1213,12 +1283,53 @@ namespace OutbreakBlazor.Pages
 
             if (skill.AdvancementsList.Count>0)
             {
+                var weekendWarrior = ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.BaseAbility.Name == "Weekend Warrior");
+                if (weekendWarrior != null)
+                {
+                    if (skill.BaseSkill.Name == "Survival" && WeekendWarriorSurvivalAdvancements.Count > 0)
+                    {
+                        var freeAdvancementPosition = WeekendWarriorSurvivalAdvancements[^1];
+                        if (freeAdvancementPosition == skill.AdvancementsList.Count-1)
+                        {
+                            WeekendWarriorSurvivalAdvancements.RemoveAt(WeekendWarriorSurvivalAdvancements.Count-1);
+                            var mostRecentAdvancement = skill.AdvancementsList[^1];
+                            skill.Advancements -= 1;
+                            skill.Value = InitialValue - mostRecentAdvancement;
+                            skill.AdvancementsList.RemoveAt(skill.AdvancementsList.Count - 1);
+                            AddToActionsLog($"+0 Gestalt (free advancement from Weekend Warrior): {skill.BaseSkill.Name} value decreased by {mostRecentAdvancement} (from {InitialValue} to {skill.Value}).");
+                            AddToActionsLog($"Removing and refunding one Tier of Weekend Warrior");
+
+                            await HandleDecreasePlayerAbility(weekendWarrior);
+
+                            return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+                        }
+                    }
+
+                    if (skill.BaseSkill.Name == "Navigation" && WeekendWarriorNavigationAdvancements.Count > 0)
+                    {
+                        var freeAdvancementPosition = WeekendWarriorNavigationAdvancements[^1];
+                        if (freeAdvancementPosition == skill.AdvancementsList.Count - 1)
+                        {
+                            WeekendWarriorNavigationAdvancements.RemoveAt(WeekendWarriorNavigationAdvancements.Count - 1);
+                            var mostRecentAdvancement = skill.AdvancementsList[^1];
+                            skill.Advancements -= 1;
+                            skill.Value = InitialValue - mostRecentAdvancement;
+                            skill.AdvancementsList.RemoveAt(skill.AdvancementsList.Count - 1);
+                            AddToActionsLog($"+0 Gestalt (free advancement from Weekend Warrior): {skill.BaseSkill.Name} value decreased by {mostRecentAdvancement} (from {InitialValue} to {skill.Value}).");
+                            AddToActionsLog($"Removing and refunding one Tier of Weekend Warrior");
+
+                            await HandleDecreasePlayerAbility(weekendWarrior);
+
+                            return await PlayerSkillService.UpdatePlayerSkill(skill.Id, skill);
+                        }
+                    }
+                }
                 var lastAdvancement = skill.AdvancementsList[^1];
                 ThisCharacter.GestaltLevel += 1;
                 skill.Advancements -= 1;
                 skill.Value = InitialValue - lastAdvancement;
+                skill.AdvancementsList.RemoveAt(skill.AdvancementsList.Count-1);
                 AddToActionsLog($"+1 Gestalt: {skill.BaseSkill.Name} value decreased by {lastAdvancement} (from {InitialValue} to {skill.Value}).");
-                skill.AdvancementsList.Remove(skill.AdvancementsList[^1]);
             }
 
             if (ThisCharacter.GestaltLevel >= 0)
@@ -1616,7 +1727,7 @@ namespace OutbreakBlazor.Pages
                     OnSupportAthleticConditioningToggleOn(ability);
                 }
 
-                if (ability.BaseAbility.Name == "Caged Wisdom")
+                if (ability.BaseAbility.Name == "Caged Wisdom" || ability.BaseAbility.Name == "Training, Melee Weapons")
                 {
                     var tv1 = BaseTrainingValues.FirstOrDefault(t => t.Name == "Bludgeon");
                     var tv2 = BaseTrainingValues.FirstOrDefault(t => t.Name == "Piercing");
@@ -1624,6 +1735,16 @@ namespace OutbreakBlazor.Pages
                     var trainingValues = new List<BaseTrainingValue>() { tv1, tv2, tv3 };
 
                     SelectTrainingValueToggleOn(trainingValues, ability);
+                }
+
+                if (ability.BaseAbility.Name == "Marksman" || ability.BaseAbility.Name == "Trigger Discipline")
+                {
+                    var option1 = BaseTrainingValues.FirstOrDefault(t => t.Name == "Long Gun");
+                    var option2 = BaseTrainingValues.FirstOrDefault(t => t.Name == "Pistol");
+
+                    var trainingValueOptions = new List<BaseTrainingValue>() { option1, option2 };
+
+                    SelectTrainingValueToggleOn(trainingValueOptions, ability);
                 }
             }
 
@@ -1656,6 +1777,11 @@ namespace OutbreakBlazor.Pages
             {
                 ThisCharacter.Morale++;
                 AddToActionsLog($"Iron Will add 1 to Morale. Morale is now {ThisCharacter.Morale}.");
+            }
+
+            if (ability.BaseAbility.Name == "Weekend Warrior")
+            {
+                OnSupportWeekendWarriorToggleOn(ability);
             }
         }
 
@@ -2239,6 +2365,93 @@ namespace OutbreakBlazor.Pages
             }
         }
 
+        protected BSModal SupportWeekendWarrior { get; set; } = new BSModal();
+        protected async Task OnSupportWeekendWarriorToggleOn(PlayerAbility ability)
+        {
+            Helper = new HelperClass();
+            ThisPlayerAbility = ability;
+            Disable = true;
+
+            var survival = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Survival");
+            var navigation = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == "Navigation");
+
+
+            if (survival.AdvancementsList.Count < 5 && survival.IsSupported && navigation.AdvancementsList.Count < 5)
+            {
+                var option1 = new HelperClass() { Name = "Survival" };
+                var option2 = new HelperClass() { Name = "Navigation" };
+
+                Helpers = new List<HelperClass>() { option1, option2 };
+            }
+            else if (survival.AdvancementsList.Count == 5 && navigation.AdvancementsList.Count == 5)
+            {
+                AddToActionsLog($"Navigation and Survival already at maximum advancements.");
+                AddToActionsLog($"Removing and refunding one Tier of Weekend Warrior");
+                await HandleDecreasePlayerAbility(ability);
+
+                Disable = false;
+                return;
+            }
+            else if (navigation.AdvancementsList.Count == 5 && survival.IsSupported == false)
+            {
+                AddToActionsLog($"Navigation is already at maximum and Survival is an unsupported expert skill that is unable to advance.");
+                AddToActionsLog($"Removing and refunding one Tier of Weekend Warrior");
+                await HandleDecreasePlayerAbility(ability);
+
+                Disable = false;
+                return;
+            }
+            else if (survival.AdvancementsList.Count == 5)
+            {
+                AddToActionsLog($"Survival already at maximum advancements. Selecting Navigation for advancement.");
+                Helper.Name = "Navigation";
+                
+                await OnSupportWeekendWarriorToggleOff();
+            }
+            else if (navigation.AdvancementsList.Count == 5)
+            {
+                AddToActionsLog($"Navigation already at maximum advancements. Selecting Survival for advancement.");
+                Helper.Name = "Survival";
+                await OnSupportWeekendWarriorToggleOff();
+            }
+            else if (survival.IsSupported == false)
+            {
+                AddToActionsLog($"Survival is an unsupported expert skill. Selecting Navigation for advancement.");
+                Helper.Name = "Navigation";
+
+                await OnSupportWeekendWarriorToggleOff();
+            }
+
+            SupportWeekendWarrior.Toggle();
+        }
+        protected async Task OnSupportWeekendWarriorToggleOff()
+        {
+            Helpers = new List<HelperClass>();
+            Disable = false;
+
+            WeekendWarriorAdvancements.Add(Helper.Name);
+
+            var skillToAdvance = ThisCharacter.PlayerSkills.FirstOrDefault(s => s.BaseSkill.Name == Helper.Name);
+
+            await HandleIncreasePlayerSkill(skillToAdvance);
+
+            ThisCharacter.GestaltLevel++;
+            AddToActionsLog($"Weekend warrior advances {skillToAdvance.BaseSkill.Name} for free");
+
+            if (skillToAdvance.BaseSkill.Name == "Survival")
+            {
+                WeekendWarriorSurvivalAdvancements.Add(skillToAdvance.AdvancementsList.Count - 1);
+            }
+            else if (skillToAdvance.BaseSkill.Name == "Navigation")
+            {
+                    WeekendWarriorNavigationAdvancements.Add(skillToAdvance.AdvancementsList.Count-1);
+            }
+
+            SupportWeekendWarrior.Toggle();
+        }
+
+
+
         protected BSModal StringSelect { get; set; } = new BSModal();
         protected void StringSelectToggleOn(List<string> strings)
         {
@@ -2303,13 +2516,13 @@ namespace OutbreakBlazor.Pages
 
             SelectTrainingValue.Toggle();
         }
-
         protected void SelectTrainingValueToggleOff()
         {
             var playerAbility = ThisCharacter.PlayerAbilities.FirstOrDefault(a => a.Id == ThisPlayerAbility.Id);
             var trainingValue = ThisCharacter.TrainingValues.FirstOrDefault(t => t.BaseTrainingValue.Name == Helper.Name);
 
             playerAbility.ImprovesTrainingValues.Add(trainingValue);
+            playerAbility.Notes = trainingValue.BaseTrainingValue.Name;
 
             foreach (var value in playerAbility.ImprovesTrainingValues)
             {
@@ -2319,6 +2532,7 @@ namespace OutbreakBlazor.Pages
 
             SelectTrainingValue.Toggle();
         }
+
 
         protected Array CsvStringToArray(string values)
         {
